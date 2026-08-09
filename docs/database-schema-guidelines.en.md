@@ -18,11 +18,10 @@ This document describes database schema design guidelines for SparkCrew. It does
 
 ## Initial candidate tables
 
-The initial candidate table names are listed below for design discussion only. This list is not a schema implementation.
+The initial candidate table names are listed below for design discussion only. This list is neither a schema implementation nor a set of finalized domain models.
 
-- `spaces`
 - `topics`
-- `thread_messages`
+- `messages`
 - `files`
 - `artifacts`
 - `agent_tasks`
@@ -32,3 +31,5 @@ The initial candidate table names are listed below for design discussion only. T
 - `browser_sessions`
 - `knowledge_documents`
 - `knowledge_chunks`
+
+The canonical documents currently define only the Topic/Thread collaboration boundary. They do not decide whether a Thread will be a separate entity/table or be represented through parent/root references on messages. That choice and the candidate table names must be decided before schema implementation after reviewing authorization boundaries, query patterns, and retention requirements.

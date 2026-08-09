@@ -18,11 +18,10 @@
 
 ## 초기 후보 테이블
 
-초기 후보 테이블 이름은 다음과 같습니다. 이 목록은 설계 방향을 문서화하기 위한 것이며, 실제 스키마 구현이 아닙니다.
+초기 후보 테이블 이름은 다음과 같습니다. 이 목록은 설계 방향을 문서화하기 위한 것이며, 실제 스키마 구현이나 확정 도메인 모델이 아닙니다.
 
-- `spaces`
 - `topics`
-- `thread_messages`
+- `messages`
 - `files`
 - `artifacts`
 - `agent_tasks`
@@ -32,3 +31,5 @@
 - `browser_sessions`
 - `knowledge_documents`
 - `knowledge_chunks`
+
+현재 canonical 문서는 Topic/Thread 협업 경계만 정의하며, Thread를 별도 엔티티/테이블로 둘지 Message의 parent/root 참조를 이용한 threading으로 표현할지는 확정하지 않습니다. 이 선택과 후보 테이블 이름은 실제 스키마 설계 전에 접근 제어, 조회 패턴, 보존 정책을 검토하여 결정해야 합니다.
