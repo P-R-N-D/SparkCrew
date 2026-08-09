@@ -1,6 +1,8 @@
-# Vericus Testing Strategy
+# SparkCrew Testing Strategy
 
-This document describes AI-facing testing strategy for document-only changes, GUI evidence, API evidence, CLI scanner evidence, report traceability, scaffold checks, and forbidden-change checks. It is a planning and review guide, not a test implementation file.
+This document describes the testing strategy for the current scaffold and for SparkCrew collaboration features as they are implemented. It is a planning and review guide, not a test implementation file.
+
+Do not claim a planned feature is verified when the corresponding code or runtime does not exist.
 
 ## Initial scaffold checks
 
@@ -30,75 +32,116 @@ For the current runnable scaffold, use these checks when the relevant area chang
   npm run test:visual
   ```
 
-- Tailwind, axios, and SweetAlert2 usage checks:
-
-  ```bash
-  cd frontend
-  rg "tailwind|@tailwind|bg-|text-|grid|flex|rounded|shadow" src
-  rg "axios|sweetalert2|Swal" src package.json
-  ```
-
-Backend changes must at least run Django checks. API changes should be checked through Django/DRF endpoint tests or manual endpoint verification until a fuller test suite is added. UI/web design changes must include Playwright-based visual testing.
+Backend changes must at least run Django checks. UI/web design changes must include Playwright-based visual testing.
 
 ## Document-only change verification
 
 For documentation-only updates, verify:
 
 - File existence for every expected document.
-- Link check for newly added references.
-- Stale reference search for removed or renamed documentation paths.
+- Link/path consistency for changed references.
+- Stale project-name and stale architecture wording in the changed documentation scope.
 - No secrets, credentials, or realistic secret examples are present.
 - The changed files are limited to the requested documentation scope.
+- Planned and implemented features remain clearly distinguished.
 
-## GUI/browser evidence testing
+Useful checks include:
 
-GUI and browser evidence testing should use Playwright when browser behavior, UI workflow, or visual evidence is in scope.
+```bash
+git diff --check
+rg -n "Vericus|evidence-driven workspace|case workspace|evidence timeline" \
+  README.md AGENTS.md CLAUDE.md docs frontend/README.md backend/README.md skills/README.md \
+  .github/copilot-instructions.md .cursor/rules/sparkcrew.mdc \
+  --glob '!TESTING.md'
+```
 
-Guidelines:
+## Topic/Thread and context testing
 
-- Use Playwright for approved GUI and browser evidence collection.
-- UI or web design changes must include Playwright-based visual testing.
-- Visual testing must be done in addition to DOM, accessibility, or CLI checks.
-- If visual testing reveals layout or appearance issues, fix them before completing the task.
-- Store screenshot and trace artifacts only after sensitive information is redacted or otherwise handled according to policy.
-- Keep browser evidence tied to the case, plan step, and tool run that produced it.
+When Topic/Thread features are implemented, verify:
+
+- Personal AI context is not visible in team contexts without explicit sharing.
+- Team AI receives only the Topic/Thread history, files, and knowledge permitted by the current access scope.
+- Topic/Thread navigation preserves the correct context.
+- Multiple topics do not leak messages, files, task state, or retrieval results into each other.
+- Rich AI responses remain usable without turning every background event into a chat message.
+
+## File, artifact, and RAG testing
+
+When file and RAG features are implemented, verify:
+
+- Upload, download, and preview permissions.
+- Personal versus team file visibility.
+- File upload does not automatically create team-wide or organization-wide knowledge.
+- Explicit knowledge-indexing actions preserve source and scope metadata.
+- Generated artifacts remain traceable to their source task/context.
+- Runtime-local temporary files do not become persistent shared files unless explicitly published.
+
+## Background task testing
+
+When AI task execution is implemented, verify:
+
+- A task can continue without blocking normal conversation.
+- Task status transitions are observable and consistent.
+- Cancellation and failure do not corrupt conversation or persistent files.
+- Task outputs return as explicit messages, files, artifacts, or task results.
+- State-changing or high-impact actions stop for approval when the workflow requires it.
+
+## Browser Computer Use testing
+
+Browser behavior and browser-based Computer Use should use Playwright for deterministic interaction and verification whenever possible.
+
+Verify:
+
+- Browser sessions start and stop cleanly.
+- The session is associated with the correct task/context.
+- Allowed viewers cannot access sessions from another context.
+- AI actions operate on the intended page and browser state.
+- User/AI control handoff is exclusive and visible when that feature is implemented.
+- Screenshots are generated and directly reviewed for UI changes.
+- Browser console errors and failed network/resource requests are checked when relevant.
+
+Full desktop/OS streaming and control are outside the current testing scope unless that project boundary is explicitly changed.
+
+## Shared result/view testing
+
+When document, media, chart/table, notebook/HTML, or live-browser presentation is implemented, verify:
+
+- The correct artifact or live session is shown.
+- Presentation state such as document page, slide, media position, or chart state stays consistent where synchronization is intended.
+- Closing the shared view does not delete the underlying artifact.
+- Desktop and mobile layouts remain usable without unintended horizontal scrolling or clipping.
+- Light and dark mode are verified when both modes are supported.
 
 ## API testing
 
-API evidence testing should use Django/DRF endpoint tests or manual endpoint verification for the current backend scaffold. Postman/Newman may be used for approved API collections and controlled request flows when that workflow is explicitly in scope.
+API changes should use Django/DRF tests and Postman/Newman verification when the API workflow is in scope.
 
-Guidelines:
+Check:
 
-- Verify the Django `GET /api/health/` endpoint when backend integration changes.
-- Use Postman/Newman for approved API evidence collection when applicable.
-- Do not send state-changing production requests unless explicitly approved.
-- Redact request and response bodies before persistent storage when they may contain sensitive information.
-- Keep API evidence traceable to the collection, request, response summary, and tool run.
+- Normal requests
+- Missing required values
+- Invalid input formats
+- Authentication and authorization errors
+- Missing resources
+- Boundary values
+- Expected HTTP status codes
+- Required response fields and types
+- Error response format
+- State changes and regression risk
 
-## CLI/scanner testing
+Do not send state-changing production requests unless explicitly approved. Do not place real secrets in Postman collections or environment examples.
 
-CLI and scanner testing should use only approved and allowlisted commands.
+## Free-threading compatibility testing
 
-Guidelines:
+SparkCrew should be written so correctness does not rely on the GIL.
 
-- Use only allowlisted commands for scanner execution.
-- Do not use root, sudo, or administrator privileges.
-- Do not run destructive commands.
-- Do not perform auto-fix actions without explicit approval.
-- Do not store unredacted scanner output as a persistent artifact.
-- Preserve redacted summaries and artifact references that are sufficient for human review.
+When a suitable free-threaded Python environment and dependency set are available:
 
-## Report/evidence testing
-
-Report and evidence testing should verify traceability and human review requirements.
-
-Check that:
-
-- References and evidence are separated.
-- Report claims are traceable to references, evidence, and tool runs.
-- Tool runs identify the action, status, artifact references, and redaction status.
-- Missing evidence and uncertainty are represented clearly.
-- Human review flags are present for legal, security, compliance, audit, or high-impact conclusions.
+- Run the relevant backend test suite with the GIL disabled.
+- Run the same critical tests with a GIL-enabled runtime as a compatibility baseline.
+- Exercise concurrent access to shared application paths instead of assuming the GIL serializes them.
+- Verify native and third-party dependencies do not silently require incompatible thread-safety assumptions.
+- Record whether free-threaded execution was actually tested; do not infer support from static review alone.
 
 ## Forbidden-change verification
 
@@ -109,7 +152,8 @@ Verify that the change set does not include unapproved:
 - SQL implementation.
 - `.env` files.
 - Secrets, credentials, or realistic secret examples.
-- Vite, FastAPI, SQLAlchemy, Alembic, Prisma, Docker, Nginx, K8s, Helm, production deployment manifests, or CI workflow files.
-- Test artifacts generated by tool execution.
+- FastAPI, SQLAlchemy, Alembic, Prisma, Docker, Nginx, K8s, Helm, production deployment manifests, or CI workflow files.
+- Package or lockfile changes.
+- Generated test artifacts.
 
-FastAPI and SQLAlchemy are not part of the initial backend stack. FastAPI may be considered later only as a separate tool-runner or streaming service after explicit approval. Docker, Nginx, K8s, Helm, and deployment manifests are not part of the current scaffold.
+FastAPI and SQLAlchemy are not part of the current backend stack. A separate execution/streaming service may be considered later only after its responsibility is explicitly approved.

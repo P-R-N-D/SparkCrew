@@ -1,164 +1,188 @@
-# Vericus AI-Facing State and Evidence Shapes
+# SparkCrew AI-Facing State Shapes
 
-This is not a database schema. This document describes AI-facing state, evidence, tool run, and runbook shapes for planning and review.
+This is not a database schema. This document describes conceptual AI-facing collaboration and runtime state for planning and review.
 
-The shapes below are conceptual pseudo-schemas. They are intended to help agents reason consistently about case state, references, live evidence, tool execution, and runbook steps. They are not tables, ORM models, migrations, or implementation requirements.
+The shapes below are pseudo-schemas only. They are not tables, ORM models, migrations, API contracts, or implementation requirements.
 
-## CaseState conceptual fields
+## CollaborationContext
 
-`CaseState` represents the working state for a case as an agent plans, collects evidence, updates hypotheses, and drafts reports for human review.
+`CollaborationContext` represents the context available to a person or AI participant for a specific interaction.
 
 Conceptual fields:
 
-- `case_id`: stable identifier for the case.
-- `user_request`: original user request or normalized summary.
-- `domain`: classified domain such as GUI, API, CLI scanner, vulnerability, compliance, audit, or mixed.
-- `target`: declared target system, page, endpoint, repository area, document, or asset.
-- `constraints`: scope limits, safety rules, approvals, and stop conditions.
-- `references`: reference materials used for planning and interpretation.
-- `plan`: current plan or runbook-level outline.
-- `current_step`: active step in the plan.
-- `evidence`: collected live evidence for the case.
-- `tool_results`: tool run summaries and artifact references.
-- `hypotheses`: tentative explanations or findings that still need evidence or review.
-- `missing_evidence`: known gaps that limit confidence or require additional collection.
-- `risk_level`: current risk assessment label for triage, not final judgment.
-- `requires_human_review`: whether the case, claim, or report needs explicit human review.
-- `final_report`: report draft or final human-reviewed report reference.
+- `context_type`: personal_chat, personal_topic, or team_topic.
+- `context_id`: stable identifier for the context.
+- `thread_id`: active thread when the interaction is scoped below the Topic level.
+- `participants`: people and shared AI participants visible in this context.
+- `messages`: relevant conversation items.
+- `files`: files explicitly available to the context.
+- `knowledge_refs`: RAG/knowledge references available under the current permissions.
+- `active_tasks`: task references started from this context.
+- `artifacts`: persistent outputs associated with the context.
+- `constraints`: permissions, tool limits, approvals, and other execution constraints.
 
 Conceptual pseudo-schema:
 
 ```json
 {
-  "case_id": "case identifier",
-  "user_request": "request summary",
-  "domain": "classified domain",
-  "target": "declared target",
-  "constraints": ["scope and safety constraint"],
-  "references": ["Reference"],
-  "plan": ["RunbookStep"],
+  "context_type": "personal_chat | personal_topic | team_topic",
+  "context_id": "context identifier",
+  "thread_id": "optional thread identifier",
+  "participants": ["ParticipantRef"],
+  "messages": ["MessageRef"],
+  "files": ["FileRef"],
+  "knowledge_refs": ["KnowledgeReference"],
+  "active_tasks": ["AgentTaskRef"],
+  "artifacts": ["ArtifactRef"],
+  "constraints": ["permission or execution constraint"]
+}
+```
+
+## AgentTaskState
+
+`AgentTaskState` represents a long-running or tool-using AI task that is separate from the conversational message that requested it.
+
+Conceptual fields:
+
+- `task_id`: stable identifier.
+- `context_ref`: personal or team context that owns the task.
+- `requested_by`: user or AI participant that initiated the task.
+- `status`: queued, running, waiting_for_approval, succeeded, failed, cancelled, or similar state.
+- `plan`: current high-level task plan when one exists.
+- `current_step`: current execution step.
+- `tool_runs`: tool execution summaries.
+- `outputs`: artifact/file/message references produced by the task.
+- `approval`: current approval requirement or result.
+- `error`: safe failure summary when applicable.
+
+Conceptual pseudo-schema:
+
+```json
+{
+  "task_id": "task identifier",
+  "context_ref": "context identifier",
+  "requested_by": "participant identifier",
+  "status": "task status",
+  "plan": ["task step"],
   "current_step": "step identifier",
-  "evidence": ["Evidence"],
-  "tool_results": ["ToolRun"],
-  "hypotheses": ["tentative claim"],
-  "missing_evidence": ["evidence gap"],
-  "risk_level": "triage label",
-  "requires_human_review": true,
-  "final_report": "report reference or draft summary"
+  "tool_runs": ["ToolRun"],
+  "outputs": ["output reference"],
+  "approval": "approval state or null",
+  "error": "safe error summary or null"
 }
 ```
 
-## Reference shape
+## ToolRun
 
-`Reference` represents context used to plan, compare, or interpret evidence. It is not itself live evidence unless separately collected as an artifact during a case.
-
-Fields:
-
-- `source_type`: document, standard, policy, repository file, external page, or other reference type.
-- `source_name`: human-readable source name.
-- `url`: source URL or repository path when applicable.
-- `trust_level`: approved, internal, external, unverified, deprecated, or similar label.
-- `fetched_at`: timestamp or date when the reference was retrieved or reviewed.
-- `approval_status`: approved for use, pending review, rejected, or unknown.
-- `summary`: concise summary relevant to the case.
-
-Conceptual pseudo-schema:
-
-```json
-{
-  "source_type": "reference type",
-  "source_name": "source name",
-  "url": "reference location",
-  "trust_level": "trust label",
-  "fetched_at": "retrieval timestamp",
-  "approval_status": "approval label",
-  "summary": "reference summary"
-}
-```
-
-## Evidence shape
-
-`Evidence` represents live case-specific output collected from approved tool execution or observation.
+`ToolRun` represents one traceable tool or runtime action.
 
 Fields:
 
-- `evidence_id`: stable identifier for the evidence item.
-- `evidence_type`: screenshot, trace, log, API response summary, scanner finding, visual comparison, or similar type.
-- `source_tool`: tool or subgraph that collected the evidence.
-- `artifact_ref`: reference to the stored artifact or redacted artifact.
-- `redaction_status`: unredacted transient, redacted, reviewed, or not applicable.
-- `summary`: concise evidence summary.
-- `collected_at`: timestamp or date when evidence was collected.
-
-Conceptual pseudo-schema:
-
-```json
-{
-  "evidence_id": "evidence identifier",
-  "evidence_type": "evidence type",
-  "source_tool": "tool name",
-  "artifact_ref": "artifact reference",
-  "redaction_status": "redaction label",
-  "summary": "evidence summary",
-  "collected_at": "collection timestamp"
-}
-```
-
-## ToolRun shape
-
-`ToolRun` represents an approved tool action and its traceable result.
-
-Fields:
-
-- `tool_name`: approved tool name.
-- `command_id` or `action_id`: stable identifier for the command or action.
-- `params_summary`: safe summary of parameters without secrets or credentials.
+- `tool_name`: Browser, Playwright, Terminal, Workspace, retrieval, model tool, API tool, or another approved tool.
+- `action_id`: stable action identifier.
+- `params_summary`: safe summary without secrets or credentials.
 - `started_at`: start timestamp.
 - `finished_at`: finish timestamp.
-- `status`: succeeded, failed, skipped, blocked by policy, or needs human approval.
-- `raw_artifact_ref`: transient or protected raw artifact reference when permitted.
-- `redacted_artifact_ref`: persistent redacted artifact reference when available.
+- `status`: succeeded, failed, skipped, blocked, or waiting_for_approval.
+- `output_refs`: artifact, file, message, log, or other persistent result references.
 
 Conceptual pseudo-schema:
 
 ```json
 {
-  "tool_name": "approved tool name",
-  "command_id": "command identifier",
+  "tool_name": "tool name",
   "action_id": "action identifier",
   "params_summary": "safe parameter summary",
   "started_at": "start timestamp",
   "finished_at": "finish timestamp",
   "status": "tool status",
-  "raw_artifact_ref": "protected raw artifact reference",
-  "redacted_artifact_ref": "redacted artifact reference"
+  "output_refs": ["persistent output reference"]
 }
 ```
 
-## RunbookStep shape
+## KnowledgeReference
 
-`RunbookStep` represents one bounded step in a plan.
+`KnowledgeReference` represents retrievable context and its scope. A shared file is not automatically a `KnowledgeReference`.
 
 Fields:
 
-- `step_id`: stable step identifier.
-- `purpose`: why the step is needed.
-- `allowed_tools`: tools permitted for this step.
-- `preconditions`: conditions that must be true before execution.
-- `expected_evidence`: evidence expected from the step.
-- `stop_conditions`: conditions that require stopping or returning for review.
-- `human_approval_required`: whether explicit human approval is required before execution.
+- `source_type`: uploaded_file, internal_document, external_page, database, or another source type.
+- `source_ref`: stable source identifier or location.
+- `scope`: personal, topic, team, organization, or external.
+- `owner_ref`: owner or managing context when applicable.
+- `indexed_at`: indexing timestamp when indexed.
+- `version_or_validity`: version, effective date, or validity information when applicable.
+- `summary`: concise retrieval summary.
 
 Conceptual pseudo-schema:
 
 ```json
 {
-  "step_id": "step identifier",
-  "purpose": "step purpose",
-  "allowed_tools": ["approved tool"],
-  "preconditions": ["required condition"],
-  "expected_evidence": ["expected evidence item"],
-  "stop_conditions": ["condition that stops execution"],
-  "human_approval_required": true
+  "source_type": "source type",
+  "source_ref": "source reference",
+  "scope": "personal | topic | team | organization | external",
+  "owner_ref": "owner reference",
+  "indexed_at": "indexing timestamp or null",
+  "version_or_validity": "version or validity metadata",
+  "summary": "retrieval summary"
 }
 ```
+
+## Artifact
+
+`Artifact` represents a persistent result created, uploaded, or derived during collaboration.
+
+Fields:
+
+- `artifact_id`: stable identifier.
+- `artifact_type`: document, image, video, chart, table, html, notebook_result, file, browser_snapshot, or similar type.
+- `context_ref`: owning personal/team context.
+- `source_task_id`: task that produced the artifact when applicable.
+- `storage_ref`: persistent storage reference.
+- `visibility`: personal or shared visibility scope.
+- `created_at`: creation timestamp.
+
+Conceptual pseudo-schema:
+
+```json
+{
+  "artifact_id": "artifact identifier",
+  "artifact_type": "artifact type",
+  "context_ref": "context identifier",
+  "source_task_id": "task identifier or null",
+  "storage_ref": "storage reference",
+  "visibility": "personal or shared scope",
+  "created_at": "creation timestamp"
+}
+```
+
+## BrowserSession
+
+`BrowserSession` represents an interactive browser runtime attached to a task.
+
+Fields:
+
+- `session_id`: stable identifier.
+- `task_id`: owning task.
+- `status`: starting, ready, active, stopping, stopped, or failed.
+- `controller`: user, AI, or none when explicit control handoff is implemented.
+- `viewer_scope`: participants allowed to view the session.
+- `started_at`: start timestamp.
+- `ended_at`: end timestamp.
+
+Browser runtime state is ephemeral by default. Persistent outputs must be returned through files, artifacts, task state, or messages.
+
+## StageItem
+
+`StageItem` represents an item currently presented in the shared viewing surface.
+
+Fields:
+
+- `item_id`: stable identifier.
+- `context_ref`: owning Topic/Thread or personal context.
+- `source_type`: artifact or live_browser.
+- `source_ref`: artifact or browser session reference.
+- `presenter_ref`: current presenter when applicable.
+- `presentation_state`: page, slide, playback position, filter, or other synchronized presentation state.
+
+`StageItem` is presentation state, not the canonical storage location for the underlying file or artifact.
