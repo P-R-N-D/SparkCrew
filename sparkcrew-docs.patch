@@ -1,0 +1,1301 @@
+diff --git a/.cursor/rules/vericus.mdc b/.cursor/rules/vericus.mdc
+index 4ed2a01..929528f 100644
+--- a/.cursor/rules/vericus.mdc
++++ b/.cursor/rules/vericus.mdc
+@@ -1,16 +1,18 @@
+ ---
+-description: Vericus shared AI-facing instructions
++description: SparkCrew shared AI-facing instructions
+ alwaysApply: true
+ ---
+ 
+-# Vericus Cursor Rule
++# SparkCrew Cursor Rule
+ 
+ Follow [docs/CONTEXT.md](../../docs/CONTEXT.md) first. It is the canonical source of truth for AI-facing context and instructions.
+ 
+ Guardrails:
+ 
+-- Collect evidence; leave final judgment to humans.
+-- Keep references separate from live evidence.
++- Preserve personal and shared team context boundaries.
++- Do not automatically promote uploaded files to shared or organization-wide RAG knowledge.
++- Keep conversation, background tasks, files/artifacts, and execution runtimes separate.
++- Do not rely on the GIL for application correctness.
+ - Do not use root, sudo, or administrator privileges.
+ - Do not run destructive commands.
+ - Do not write or commit secrets, API keys, passwords, or tokens.
+diff --git a/.github/copilot-instructions.md b/.github/copilot-instructions.md
+index 96a869e..029a807 100644
+--- a/.github/copilot-instructions.md
++++ b/.github/copilot-instructions.md
+@@ -1,11 +1,13 @@
+-# Vericus Copilot Instructions
++# SparkCrew Copilot Instructions
+ 
+ Follow [`docs/CONTEXT.md`](../docs/CONTEXT.md) first. It is the canonical source of truth for AI-facing context and instructions.
+ 
+ Guardrails:
+ 
+-- Collect evidence; leave final judgment to humans.
+-- Keep references separate from live evidence.
++- Preserve personal and shared team context boundaries.
++- Do not automatically promote uploaded files to shared or organization-wide RAG knowledge.
++- Keep conversation, background tasks, files/artifacts, and execution runtimes separate.
++- Do not rely on the GIL for application correctness.
+ - Do not use root, sudo, or administrator privileges.
+ - Do not run destructive commands.
+ - Do not write or commit secrets, API keys, passwords, or tokens.
+diff --git a/AGENTS.md b/AGENTS.md
+index 663c799..c9b5035 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -1,11 +1,14 @@
+-# Vericus Codex Entry Point
++# SparkCrew Codex Entry Point
+ 
+ Read [`docs/CONTEXT.md`](docs/CONTEXT.md) first. It is the canonical source of truth for AI-facing context and instructions.
+ 
+ Guardrails:
+ 
+-- Collect evidence; leave final judgment to humans.
+-- Keep references separate from live evidence.
++- Preserve the boundary between personal context and shared team context.
++- Do not expose private AI conversations, personal files, or personal working context to team topics unless the user explicitly shares them.
++- Treat file sharing and RAG/knowledge indexing as separate operations.
++- Keep conversation, background tasks, files/artifacts, and execution runtimes as separate concerns.
++- Do not rely on the GIL for application correctness; shared mutable state requires explicit synchronization or external state management.
+ - Do not use root, sudo, or administrator privileges.
+ - Do not run destructive commands.
+ - Do not write or commit secrets, API keys, passwords, or tokens.
+diff --git a/README.md b/README.md
+index acbb845..bd654fe 100644
+--- a/README.md
++++ b/README.md
+@@ -1,12 +1,12 @@
+-<h1 align="center">Vericus</h1>
++<h1 align="center">SparkCrew</h1>
+ 
+ <p align="center">
+-  <strong>RAG와 LangGraph, tool-based execution을 활용하는 evidence-driven workspace</strong><br>
+-  <strong>An evidence-driven workspace powered by RAG, LangGraph, and tool-based execution</strong>
++  <strong>사람과 AI가 같은 맥락에서 대화하고, 작업하고, 결과를 만드는 AI 협업 프로젝트</strong><br>
++  <strong>An AI collaboration project where people and AI share context, work, and produce results together</strong>
+ </p>
+ 
+ <p align="center">
+-  GUI/CLI testing, vulnerability analysis, compliance auditing을 지원하는 방향입니다.<br>
++  개인 AI 대화와 팀 Topic/Thread 협업을 바탕으로 파일·지식·백그라운드 작업과 Browser/Terminal/Workspace 실행을 연결하는 방향입니다.<br>
+   See the Korean and English documentation for details.
+ </p>
+ 
+@@ -18,9 +18,22 @@
+ 
+ ---
+ 
+-## Initial runnable scaffold
++## Project direction
+ 
+-Vericus now includes an initial local application scaffold:
++SparkCrew explores a collaboration model in which conversation is shared context rather than the only workspace.
++
++- **Personal AI**: private AI conversations and personal topics.
++- **Team topics and threads**: SNS-style posts and threaded discussion for people and shared AI participants.
++- **Files and knowledge**: shared files remain separate from RAG indexing scope; upload does not automatically promote a file to team or organization knowledge.
++- **Background work**: AI tasks run independently from the conversation that requested them.
++- **Execution tools**: browser automation, terminal tasks, and isolated workspaces can be attached to a task when needed.
++- **Shared results**: documents, images, video, charts, tables, notebook/HTML results, and live browser sessions can be presented in a shared viewing surface.
++
++Full desktop/OS streaming and control are not part of the current project direction. Browser-based Computer Use is the primary interactive execution target.
++
++## Current runnable scaffold
++
++The repository currently includes an initial local application scaffold:
+ 
+ - Frontend: Next.js, React, TypeScript, Tailwind CSS, axios, SweetAlert2, Playwright.
+ - Backend: Django, Django REST Framework, Django Admin, Django ORM, django-cors-headers.
+@@ -28,6 +41,8 @@ Vericus now includes an initial local application scaffold:
+ - Health endpoint: `GET /api/health/` returns the Django/DRF service status.
+ - Admin route: Django Admin is enabled at `/admin/`.
+ 
++The collaboration, RAG, agent-task, browser-runtime, terminal/workspace, and shared-result concepts above describe project direction and are not all implemented by the current scaffold.
++
+ Docker, Nginx, K8s, Helm, production deployment manifests, custom domain models, custom migrations, and SQL schema work are not part of this initial scaffold.
+ 
+ ## Local development
+@@ -46,7 +61,7 @@ npm run test:visual
+ npm run dev -- --hostname 127.0.0.1 --port 3000
+ ```
+ 
+-Open `http://127.0.0.1:3000` to view the Vericus workspace shell and backend health status.
++Open `http://127.0.0.1:3000` to view the current frontend scaffold and backend health status.
+ 
+ ### Optional Django Admin setup
+ 
+diff --git a/backend/README.md b/backend/README.md
+index 0209227..93f7d5c 100644
+--- a/backend/README.md
++++ b/backend/README.md
+@@ -1,6 +1,8 @@
+-# Vericus Backend
++# SparkCrew Backend
+ 
+-Initial backend scaffold for Vericus uses Django, Django REST Framework, Django Admin, Django ORM, and django-cors-headers.
++The initial SparkCrew backend scaffold uses Django, Django REST Framework, Django Admin, Django ORM, and django-cors-headers.
++
++The backend direction is to keep Django as the primary control plane for users, permissions, topic/thread context, files, knowledge scope, task state, and admin workflows. Long-running AI work and Browser/Terminal/Workspace execution should run outside normal request handling. FastAPI or another runtime service may be considered later only when a separate execution/streaming service is justified.
+ 
+ ## Local development
+ 
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index 069fe96..90da3d0 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -1,8 +1,8 @@
+-# Vericus Architecture
++# SparkCrew Architecture
+ 
+-Vericus is an evidence-driven workspace. Agents should collect, preserve, summarize, and trace evidence for human review rather than making final legal, security, compliance, or audit judgments.
++SparkCrew is an AI collaboration project centered on personal AI conversations and team Topic/Thread collaboration. Conversation provides context, while files, knowledge, background tasks, artifacts, and execution runtimes remain separate resources.
+ 
+-This document describes the AI-facing architecture direction for planning and review. It also records the current initial application scaffold boundaries.
++This document describes architecture direction and current scaffold boundaries. Planned components must not be described as implemented unless the repository contains working code and verification for them.
+ 
+ ## Current runnable scaffold
+ 
+@@ -12,91 +12,144 @@ This document describes the AI-facing architecture direction for planning and re
+ - Health endpoint: Django exposes `GET /api/health/` for frontend/backend connectivity checks.
+ - Admin route: Django Admin is enabled at `/admin/` for internal operator/admin workflows.
+ 
+-The Next.js frontend is reserved for product-style case workspace, evidence timeline, report review, visual artifact viewer, and reviewer/admin UI. Django REST Framework is the initial API layer. Django ORM is the primary ORM.
++Django REST Framework is the current API layer and Django ORM is the primary ORM. The current scaffold does not yet implement the complete collaboration, RAG, agent runtime, Browser/Terminal/Workspace, or shared-result model described below.
+ 
+-FastAPI and SQLAlchemy are not part of the initial backend stack. FastAPI may be considered later only as a separate tool-runner or streaming service after explicit approval. Docker, Nginx, K8s, Helm, deployment manifests, production settings, custom domain DB models, custom migrations, SQL schema work, Alembic, and Prisma are not part of this scaffold.
++FastAPI and SQLAlchemy are not part of the current backend stack. FastAPI may be considered later only as a separate execution or streaming service after explicit approval. Docker, Nginx, K8s, Helm, deployment manifests, production settings, custom domain DB models, custom migrations, SQL schema work, Alembic, and Prisma are not part of this scaffold.
+ 
+-## LangGraph-style orchestration overview
++## Collaboration model
+ 
+-Vericus uses LangGraph-style orchestration as a planning model for coordinating context retrieval, policy review, tool execution, evidence collection, state updates, and report generation.
++The conceptual collaboration hierarchy is:
+ 
+-The orchestration should keep these responsibilities separate:
++```text
++Personal context
++├─ Personal AI chat
++├─ Personal topics
++└─ Personal files/work
+ 
+-- Context and reference retrieval
+-- Planning and runbook selection
+-- Policy checks before tool execution
+-- Tool dispatch and tool result capture
+-- Evidence redaction and storage
+-- State updates
+-- Human-review-oriented report drafting
++Team context
++└─ Topic / Post
++   ├─ Thread / messages
++   ├─ People
++   ├─ Shared AI participants
++   ├─ Files
++   ├─ Background tasks
++   └─ Artifacts / shared views
++```
+ 
+-Agents should prefer explicit, traceable steps over uncontrolled exploration.
++A team Topic/Thread is a durable context boundary. It is not required to contain every project resource directly, but messages, files, tasks, artifacts, and knowledge references should be traceable back to the context that created or shared them.
+ 
+-## Top-level graph example
++Personal AI context remains private until the user explicitly shares content into a team context.
+ 
+-A typical top-level graph may contain these conceptual nodes:
++## Frontend surfaces
+ 
+-1. **Intake request**: capture the user request, target, constraints, and declared scope.
+-2. **Classify domain**: identify whether the case is GUI, API, CLI scanner, vulnerability, compliance, audit, or mixed-domain work.
+-3. **Retrieve context/reference**: gather approved project context and external reference material separately from live evidence.
+-4. **Build plan**: create a bounded plan or runbook with expected evidence and stop conditions.
+-5. **Policy check**: verify scope, safety constraints, allowed tools, and approval requirements before any tool execution.
+-6. **Execute tool**: run only approved tools and actions that satisfy the policy check.
+-7. **Collect evidence**: capture artifacts, screenshots, traces, logs, summaries, and metadata from tool output.
+-8. **Update state**: record tool results, evidence, hypotheses, missing evidence, risk level, and human review requirements.
+-9. **Generate report**: draft a report that is traceable to references, evidence, and tool runs while leaving final judgment to humans.
++The frontend direction separates several user-facing concerns:
+ 
+-## Major subgraphs
++- **Conversation**: personal chat and team Topic/Thread discussion.
++- **Files and artifacts**: uploaded files and generated results.
++- **Tasks**: long-running AI work with status independent from the chat timeline.
++- **Shared viewing surface**: documents, images, video, charts, tables, notebook/HTML output, and live browser sessions.
++- **Browser work**: collaborative observation and, when implemented, explicit user/AI browser-control handoff.
+ 
+-### Playwright GUI evidence
++The shared viewing surface is a presentation state over artifacts or live browser sessions, not a replacement for persistent file/artifact storage.
+ 
+-The Playwright GUI evidence subgraph collects browser-based evidence for UI behavior, workflows, and visual state. It should capture screenshots, traces, relevant DOM context, accessibility observations, and concise summaries when in scope. UI changes must include Playwright-based visual testing and should not be evaluated only through DOM or accessibility snapshots when visual evidence is relevant.
++## Backend control plane
+ 
+-### Postman/Newman API evidence
++Django remains the default control plane.
+ 
+-The Postman/Newman API evidence subgraph collects API request and response evidence from approved collections and environments. It should avoid state-changing production requests unless explicitly approved and should redact sensitive request and response content before persistent storage.
++Its direction includes:
+ 
+-### Vulnerability scanner evidence
++- Authentication and users
++- Team/personal authorization boundaries
++- Topic/Thread context
++- Messages
++- File metadata and access
++- Knowledge/RAG scope
++- Artifact metadata
++- AI task state
++- Approval state when needed
++- Internal admin workflows
+ 
+-The vulnerability scanner evidence subgraph coordinates allowlisted CLI scanner actions. It should capture scanner findings as evidence, preserve enough metadata for traceability, and avoid root, sudo, administrator privileges, destructive commands, and unapproved auto-fix behavior.
++Normal web requests should not own long-running AI or Browser/Terminal/Workspace execution.
+ 
+-### Compliance RAG/reference analysis
++## Realtime collaboration
+ 
+-The compliance RAG/reference analysis subgraph retrieves and summarizes approved policies, standards, control descriptions, and project documents. Its output is reference material, not live evidence. Reports should label this material as references and should not treat it as proof that a system behaved in a particular way.
++Realtime transport should match the data being transferred.
+ 
+-### Visual judge
++- Chat messages, task state, presence-like events, approvals, and presentation state may use WebSocket or SSE depending on interaction requirements.
++- Large binary files should use object/file storage rather than message transport.
++- Live browser viewing/control should use a runtime-appropriate low-latency channel instead of encoding the entire feature as ordinary chat messages.
+ 
+-The visual judge subgraph supports human review by comparing screenshots, visual baselines, or UI artifacts when requested and in scope. It should describe observable differences, uncertainty, and missing evidence rather than making final human judgments.
++The exact transport is an implementation choice and should be introduced only when the corresponding feature is implemented.
+ 
+-## Reference and evidence separation
++## Agent and background execution
+ 
+-References and evidence must remain separate throughout the workflow.
++AI work should be modeled as task execution separate from conversational messages.
+ 
+-- **References** are retrieved context, documentation, standards, policies, or guidance used to plan and interpret a case.
+-- **Evidence** is live output collected from GUI, API, CLI, scanner, or other tool execution for a specific case.
++A typical conceptual flow is:
+ 
+-A report should make clear which claims are supported by references, which are supported by evidence, and which require human review.
++1. A user or shared AI participant receives context from a personal chat or team Topic/Thread.
++2. The system resolves permitted files and RAG knowledge.
++3. The AI decides whether a response can be produced directly or a background task is needed.
++4. A task may use model calls, retrieval, Browser, Terminal, or Workspace tools.
++5. Task status and intermediate events are published independently from the conversation.
++6. Persistent outputs return as messages, artifacts, files, or task results.
++7. Runtime-local state may be discarded when the task/runtime ends.
+ 
+-## Policy before tool execution
++Agent orchestration frameworks such as LangGraph or DeepAgents may be used as implementation details. Product contracts should remain independent from one agent framework.
+ 
+-Every tool execution must be preceded by a policy check. The policy check should consider:
++## Browser, Terminal, and Workspace runtimes
+ 
+-- User authorization and declared scope
+-- Allowed tools and allowed targets
+-- Whether the action is read-only or state-changing
+-- Required human approval
+-- Stop conditions
+-- Redaction needs
+-- Artifact handling requirements
++The current execution direction is:
+ 
+-Tool execution should not proceed when policy status is unclear.
++- **Browser**: primary interactive Computer Use target; prefer Playwright/CDP for deterministic browser actions.
++- **Terminal**: command execution for task-scoped automation when explicitly implemented and permitted.
++- **Workspace**: isolated task working directory/runtime for files and generated outputs.
+ 
+-## Safety guardrails
++These runtimes should be task-scoped and separable from persistent collaboration data.
+ 
+-Agents must follow these guardrails:
++Full desktop/OS streaming and control are outside the current project scope.
+ 
+-- Do not use root, sudo, or administrator privileges.
+-- Do not run destructive commands.
+-- Do not write or commit secrets, API keys, passwords, tokens, or real server credentials.
+-- Keep references separate from live evidence.
+-- Collect evidence and leave final judgment to humans.
++## Files, artifacts, and RAG
++
++Files and knowledge have different lifecycles.
++
++```text
++File upload
++├─ Shared/personal file
++├─ Optional current-task input
++└─ Optional explicit RAG/knowledge indexing
++```
++
++Uploading a file must not automatically promote it to team-wide or organization-wide RAG knowledge.
++
++RAG retrieval should preserve and enforce scope such as personal, current Topic/Thread, team/project, organization, or external source. Source, ownership, version/validity, and indexing status should remain traceable when implemented.
++
++Artifacts are generated or derived outputs such as documents, charts, tables, images, HTML/notebook results, or browser snapshots. They should remain traceable to the task and context that produced them.
++
++## Python concurrency direction
++
++SparkCrew should be designed for free-threaded Python compatibility.
++
++- Correctness must not depend on the GIL for synchronization.
++- Avoid unprotected process-global mutable application state.
++- Use explicit synchronization for unavoidable shared in-process state.
++- Prefer PostgreSQL, Redis, queues, or equivalent external stores for distributed shared state.
++- ASGI async I/O remains useful for I/O concurrency even with free-threaded Python.
++- Native and third-party dependency compatibility must be verified before enabling GIL-free production execution.
++- GIL-enabled CPython remains a compatibility and stability fallback.
++
++Free-threading does not remove the need for process isolation, task workers, or horizontal scaling where those are operationally useful.
++
++## Authorization and safety
++
++Before accessing shared context or executing tools, check:
++
++- User and AI participant authorization
++- Personal versus team visibility
++- File and knowledge scope
++- Allowed tools and targets
++- Whether an action is read-only or state-changing
++- Whether explicit human approval is required
++- Artifact and secret-handling requirements
++
++Do not use root, sudo, or administrator privileges. Do not run destructive commands or persist secrets in normal project data.
+diff --git a/docs/CONTEXT.md b/docs/CONTEXT.md
+index 061ef29..acfdd8c 100644
+--- a/docs/CONTEXT.md
++++ b/docs/CONTEXT.md
+@@ -1,14 +1,22 @@
+-# Vericus Agent Guidelines
++# SparkCrew Agent Guidelines
+ 
+ This file is the canonical source of truth for AI-facing context and instructions in this repository. Read it before following any bridge file, tool-specific rule, or generated suggestion.
+ 
+ ## Project purpose
+ 
+-Vericus is an evidence-driven workspace for GUI/CLI testing, vulnerability analysis, compliance validation, and audit evidence reporting. It combines RAG, LangGraph-style orchestration, and tool-based execution to help humans review traceable evidence.
++SparkCrew is an AI collaboration project where people and AI share context, discuss work, execute tasks, and produce results together.
++
++The primary collaboration direction is topic- and thread-based rather than chat-only:
++
++- Personal AI conversations and personal topics remain user-scoped by default.
++- Team topics and threads contain people and shared AI participants.
++- AI may use files, RAG knowledge, background tasks, Browser, Terminal, and Workspace execution when the current task and permissions allow it.
++- Documents, media, charts/tables, notebook/HTML results, artifacts, and live browser sessions may be presented in a shared viewing surface.
++- Full desktop/OS streaming and control are outside the current project scope. Browser-based Computer Use is the primary interactive execution target.
+ 
+ ## Current application scaffold
+ 
+-The initial runnable application scaffold uses these primary stacks:
++The current runnable application scaffold uses these primary stacks:
+ 
+ - Frontend: Next.js, React, TypeScript, Tailwind CSS, axios, SweetAlert2, and Playwright.
+ - Backend: Django, Django REST Framework, Django Admin, Django ORM, and django-cors-headers.
+@@ -16,29 +24,29 @@ The initial runnable application scaffold uses these primary stacks:
+ - Health endpoint: Django exposes `GET /api/health/` for frontend/backend integration checks.
+ - Admin: Django Admin is enabled at `/admin/` and reserved for internal operator/admin workflows.
+ 
+-FastAPI and SQLAlchemy are not part of the initial backend stack. FastAPI may be considered later only as a separate tool-runner or streaming service after explicit approval. Docker, Nginx, K8s, Helm, and deployment manifests are not part of the current scaffold.
++The collaboration, RAG, background-task, Browser/Terminal/Workspace, and shared-result features described in this document are architectural direction unless the current code and tests demonstrate that they are implemented.
++
++FastAPI and SQLAlchemy are not part of the current backend stack. FastAPI may be considered later only as a separate execution or streaming service after explicit approval. Docker, Nginx, K8s, Helm, and deployment manifests are not part of the current scaffold.
+ 
+ ## Document roles
+ 
+-- AI-facing documents define instructions that agents must follow.
+-- Human-facing documents explain project intent and structure for people.
+ - `docs/CONTEXT.md` is the canonical AI-facing instruction and context file.
+-- [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) describes the LangGraph graph, subgraphs, tool dispatch, evidence flow, and current application scaffold boundaries.
+-- [`docs/STATE-SCHEMA.md`](STATE-SCHEMA.md) describes LangGraph state, evidence object, tool run, and runbook schema concepts.
+-- [`docs/TESTING.md`](TESTING.md) describes testing strategy for GUI, API, CLI scanner, document-only changes, and scaffold checks.
+-- `skills/*/SKILL.md` files define task- or tool-level execution procedures.
+-- Human-facing explanation documents should be split by language, for example `docs/<topic>.ko.md` and `docs/<topic>.en.md`.
+-
+-## Core rules
+-
+-- Collect evidence; do not make the final human judgment.
+-- Treat RAG output as reference material.
+-- Treat GUI, CLI, API, and tool output as live evidence.
+-- Keep references separate from evidence.
+-- Do not use root, sudo, or administrator privileges.
+-- Do not run destructive commands.
+-- Do not write or commit secrets, API keys, passwords, tokens, or real server credentials.
+-- Do not create `.env` files. Use `.env.example` only when explicitly needed.
++- [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) describes the project architecture direction and current scaffold boundaries.
++- [`docs/STATE-SCHEMA.md`](STATE-SCHEMA.md) describes conceptual collaboration and runtime state shapes. It is not a database schema.
++- [`docs/TESTING.md`](TESTING.md) describes testing strategy and current scaffold checks.
++- `skills/*/SKILL.md` files define reusable task- or tool-level execution procedures and do not define the top-level product model.
++- Human-facing explanation documents should be split by language when both Korean and English versions are maintained.
++
++## Core collaboration rules
++
++- Treat Topic/Thread context as a durable collaboration context, not merely a sequence of chat messages.
++- Keep private Personal AI context separate from shared team context.
++- Do not expose personal conversations, personal files, or personal working state to a team context unless the user explicitly shares them.
++- Shared AI may use only the conversation, files, knowledge, and tools permitted for its current context.
++- Keep file sharing and RAG/knowledge indexing separate. Uploading a file must not automatically make it team-wide or organization-wide knowledge.
++- Keep conversation, background tasks, persistent files/artifacts, and execution runtimes as separate concerns.
++- Long-running work must not block the conversation that requested it.
++- Browser/Terminal/Workspace execution is task-scoped. Persistent results should return as files, artifacts, task state, or messages rather than relying on runtime-local state.
+ 
+ ## Architecture direction
+ 
+@@ -46,41 +54,74 @@ FastAPI and SQLAlchemy are not part of the initial backend stack. FastAPI may be
+ 
+ The primary frontend stack is Next.js + React + TypeScript + Tailwind CSS. The frontend API client uses axios. Frontend alert/modal UX uses SweetAlert2.
+ 
+-The Next.js frontend is reserved for product-style case workspace, evidence timeline, report review, visual artifact viewer, and reviewer/admin UI.
++The frontend direction includes:
++
++- Personal AI conversations
++- Team Topic/Thread collaboration
++- Rich AI responses and generated artifacts
++- File and knowledge interactions
++- Background task status
++- Shared document, media, data, and artifact views
++- Live Browser viewing and browser-control handoff when implemented
++
++UI changes must remain responsive and must be validated with Playwright when they affect rendered behavior or appearance.
+ 
+ ### Backend
+ 
+-The primary backend stack is Django + Django REST Framework + Django Admin. Django ORM is the primary ORM. Django Admin is reserved for internal operator/admin workflows.
++The primary backend stack is Django + Django REST Framework + Django Admin. Django ORM is the primary ORM. Django remains the default control plane for users, permissions, collaboration context, files, knowledge scope, task state, and internal admin workflows.
+ 
+-The backend direction includes:
++Long-running AI work and Browser/Terminal/Workspace execution should be separated from normal HTTP request handling. A separate runtime service may be introduced later only when its responsibility and operational benefit are clear.
+ 
+-- RAG retrieval
+-- LangGraph-style orchestration
+-- Policy checks
+-- Tool dispatch
+-- Evidence storage
+-- Report generation
++Agent orchestration is an implementation detail. LangGraph, DeepAgents, or another framework may be used when appropriate, but SparkCrew domain contracts should not depend on one orchestration framework.
+ 
+ Do not add custom domain models, custom migrations, SQL, SQLAlchemy, Alembic, FastAPI, Docker, Nginx, K8s, Helm, or deployment manifests without explicit approval.
+ 
+-## Tool roles
++## RAG and knowledge direction
++
++RAG is contextual knowledge retrieval, not an automatic consequence of file upload.
++
++Keep at least these scopes conceptually distinct:
+ 
+-- Playwright collects GUI and browser evidence and is required for UI/web design changes.
+-- Newman/Postman CLI collects API test evidence when API collection testing is in scope.
+-- CLI scanners collect vulnerability and compliance evidence when explicitly approved.
+-- Local or online LLMs support planning, summarization, visual judgment, and report drafting.
++- Personal files/context
++- Current Topic/Thread files
++- Team/project knowledge
++- Organization knowledge
++- External sources
++
++Retrieval must respect the current user's and AI participant's effective permissions. Source, ownership, scope, version/validity, and indexing state should remain traceable when those features are implemented.
++
++## Tool and execution roles
++
++- Playwright is the primary browser automation and browser validation tool.
++- Browser-based Computer Use may combine deterministic Playwright/CDP actions with visual interaction only when needed.
++- Terminal and Workspace execution should run in isolated task runtimes when implemented.
++- Newman/Postman CLI is used for API verification when API collection testing is in scope.
++- Local or online LLMs may support planning, retrieval, generation, summarization, and tool use.
++- Existing specialized scanner/compliance skills remain task-level experiments and are not the top-level SparkCrew product definition.
++
++## Concurrency direction
++
++SparkCrew should be designed for free-threaded Python compatibility.
++
++- Application correctness must not rely on the GIL as an implicit synchronization mechanism.
++- Avoid unprotected process-global mutable application state.
++- Use explicit synchronization when shared in-process state is unavoidable.
++- Prefer PostgreSQL, Redis, queues, or other external stores for distributed shared state.
++- Treat ASGI async I/O and free-threaded parallelism as complementary mechanisms.
++- Verify thread safety and free-threaded compatibility of native and third-party dependencies before enabling GIL-free production execution.
++- A GIL-enabled CPython runtime remains a compatibility and stability fallback.
+ 
+ ## Development rules
+ 
+-- Separate agent orchestration, policy checks, tool execution, and evidence storage.
+-- Run a policy check before tool execution.
+-- Prefer deterministic evidence collection over uncontrolled browser exploration.
+-- Make reports traceable to references, evidence, and tool runs.
+-- Store raw artifacts separately from compact summaries when possible.
+-- Mark legal, security, and audit conclusions for human review.
++- Do not claim a planned feature is implemented unless the current code and tests demonstrate it.
++- Preserve the separation between personal and shared context.
++- Preserve the separation between conversation, tasks, files/artifacts, knowledge, and execution runtimes.
++- Check authorization before accessing shared files, knowledge, or tools.
++- Require explicit approval for high-impact or state-changing actions when such workflows are implemented.
+ - UI/web design changes must include Playwright-based visual testing.
+ - Backend changes must at least run Django checks.
+-- API changes should be checked through Django/DRF endpoint tests or manual endpoint verification until a fuller test suite is added.
++- API contract changes should include appropriate Django/DRF tests and Postman/Newman verification when that workflow is in scope.
++- Do not rely on the GIL for thread safety.
+ 
+ ## Repository guardrails
+ 
+@@ -89,4 +130,8 @@ Do not add custom domain models, custom migrations, SQL, SQLAlchemy, Alembic, Fa
+ - Do not edit ORM models without explicit approval.
+ - Do not implement backend or frontend features unless explicitly requested.
+ - Do not install packages or change lockfiles unless explicitly requested.
+-- Preserve existing README and LICENSE policy.
++- Do not use root, sudo, or administrator privileges.
++- Do not run destructive commands.
++- Do not write or commit secrets, API keys, passwords, tokens, or real server credentials.
++- Do not create `.env` files. Use `.env.example` only when explicitly needed.
++- Preserve existing LICENSE policy.
+diff --git a/docs/README.en.md b/docs/README.en.md
+index 2b16403..7e874b2 100644
+--- a/docs/README.en.md
++++ b/docs/README.en.md
+@@ -1,15 +1,33 @@
+-# Vericus
++# SparkCrew
+ 
+-Vericus is an evidence-driven workspace for GUI/CLI testing, vulnerability analysis, compliance validation, and audit evidence reporting.
++SparkCrew is an AI collaboration project where people and AI work from personal and team context, share files and knowledge, and use browser, terminal, and workspace tools when a task needs execution.
++
++## Collaboration model
++
++SparkCrew is designed around topics and threads rather than treating a single group-chat timeline as the entire workspace.
++
++- **Personal AI**: private conversations, personal topics, and user-scoped work.
++- **Team topics and threads**: SNS-style posts and threaded discussion where people and shared AI participants collaborate in the same context.
++- **Shared AI**: uses only the topic/thread, files, and knowledge that the current permissions allow, and connects public work and results back to that context.
++- **Files and knowledge**: file sharing and RAG indexing are separate actions. Uploading a file does not automatically promote it to team or organization knowledge.
++- **Background tasks**: long-running AI work executes independently from the conversation that requested it.
++- **Execution tools**: browser, terminal, and workspace runtimes are attached only when a task needs them.
++- **Shared result surface**: documents, images, video, charts, tables, notebook/HTML output, and live browser sessions can be presented for collaborative viewing.
++
++Full desktop/OS streaming and control are outside the current project scope. Browser-based Computer Use is the primary interactive execution target.
+ 
+ ## Current initial runnable scaffold
+ 
++The repository currently contains this initial scaffold:
++
+ - Frontend: Next.js, React, TypeScript, Tailwind CSS, axios, SweetAlert2, Playwright.
+ - Backend: Django, Django REST Framework, Django Admin, Django ORM, django-cors-headers.
+ - Local integration: the Next.js dev server rewrites `/api/*` to the Django backend at `http://127.0.0.1:8000/api/*`.
+ - Health endpoint: `GET /api/health/`.
+ - Django Admin: `/admin/`.
+ 
++The collaboration, RAG, agent-task, browser/terminal/workspace, and shared-result concepts above describe project direction and are not all implemented by the current scaffold.
++
+ This initial scaffold does not include Docker, Nginx, K8s, Helm, production deployment manifests, custom domain models, custom migrations, or SQL schema work.
+ 
+ ## Local development
+@@ -28,8 +46,10 @@ npm run test:visual
+ npm run dev -- --hostname 127.0.0.1 --port 3000
+ ```
+ 
+-Open `http://127.0.0.1:3000` to view the Vericus workspace shell and `/api/health/` response. SweetAlert2 alerts are used when backend health checks fail.
++Open `http://127.0.0.1:3000` to view the current frontend scaffold and `/api/health/` response. SweetAlert2 alerts are used when backend health checks fail.
+ 
+ ## Direction
+ 
+-The Next.js frontend is reserved for the product-style case workspace, evidence timeline, report review, visual artifact viewer, and reviewer/admin UI. Django Admin is reserved for internal operator/admin workflows.
++The Next.js frontend is intended to grow into the user-facing surface for personal AI conversations, team topics/threads, files and artifacts, AI task status, shared results, and browser work. Django/DRF remains the primary backend/control plane for users, permissions, collaboration context, files, knowledge, and task state, while Django Admin remains reserved for internal operator/admin workflows.
++
++Long-running AI execution and browser/terminal/workspace runtimes should be separated from normal web request handling.
+diff --git a/docs/README.ko.md b/docs/README.ko.md
+index 1d158ff..24ccc84 100644
+--- a/docs/README.ko.md
++++ b/docs/README.ko.md
+@@ -1,15 +1,33 @@
+-# Vericus
++# SparkCrew
+ 
+-Vericus는 GUI/CLI 테스트, 취약점 분석, 컴플라이언스 검증, 감사 증거 보고를 위한 evidence-driven workspace를 지향합니다.
++SparkCrew는 사람과 AI가 개인 및 팀 컨텍스트에서 대화하고, 파일과 지식을 공유하며, 필요할 때 Browser·Terminal·Workspace를 사용해 함께 작업 결과를 만드는 AI 협업 프로젝트입니다.
++
++## 협업 모델
++
++SparkCrew는 단체 채팅 하나에 모든 정보를 쌓는 구조보다 Topic과 Thread를 중심으로 맥락을 유지하는 방향을 지향합니다.
++
++- **개인 AI**: 사용자와 AI의 비공개 대화, 개인 Topic, 개인 작업을 다룹니다.
++- **팀 Topic/Thread**: 게시물과 댓글/스레드 형태로 사람과 공유 AI가 같은 업무 맥락에서 협업합니다.
++- **공유 AI**: 허용된 Topic/Thread, 파일, 지식 범위를 컨텍스트로 사용하고 작업과 결과를 공개적으로 연결합니다.
++- **파일과 지식**: 파일 공유와 RAG 등록을 분리합니다. 파일 업로드만으로 팀 또는 조직 지식에 자동 등록하지 않습니다.
++- **백그라운드 작업**: AI의 장시간 작업은 채팅 흐름을 막지 않고 별도 작업 상태로 실행합니다.
++- **실행 도구**: Browser, Terminal, Workspace는 작업이 필요할 때 선택적으로 사용합니다.
++- **공유 결과 화면**: 문서, 이미지, 동영상, 차트, 표, Notebook/HTML 결과와 라이브 Browser를 함께 보는 화면을 지향합니다.
++
++현재 범위에서는 전체 OS 데스크톱 스트리밍과 제어를 다루지 않습니다. 상호작용이 필요한 Computer Use는 Browser를 우선 대상으로 합니다.
+ 
+ ## 현재 초기 실행 scaffold
+ 
++현재 저장소에 실제로 포함된 초기 scaffold는 다음과 같습니다.
++
+ - Frontend: Next.js, React, TypeScript, Tailwind CSS, axios, SweetAlert2, Playwright.
+ - Backend: Django, Django REST Framework, Django Admin, Django ORM, django-cors-headers.
+ - Local 연동: Next.js 개발 서버가 `/api/*` 요청을 Django backend `http://127.0.0.1:8000/api/*`로 rewrite합니다.
+ - Health endpoint: `GET /api/health/`.
+ - Django Admin: `/admin/`.
+ 
++위의 협업, RAG, AI 작업, Browser/Terminal/Workspace, 공유 결과 화면은 프로젝트 방향이며 현재 scaffold에 모두 구현되어 있다는 의미가 아닙니다.
++
+ 이번 초기 scaffold에는 Docker, Nginx, K8s, Helm, production deployment manifest, custom domain model, custom migration, SQL schema 작업이 포함되지 않습니다.
+ 
+ ## 로컬 실행 순서
+@@ -28,8 +46,10 @@ npm run test:visual
+ npm run dev -- --hostname 127.0.0.1 --port 3000
+ ```
+ 
+-브라우저에서 `http://127.0.0.1:3000`을 열면 Vericus workspace shell과 `/api/health/` 응답이 표시됩니다. Backend 연결 실패 또는 재시도 실패 시 SweetAlert2 alert가 표시됩니다.
++브라우저에서 `http://127.0.0.1:3000`을 열면 현재 frontend scaffold와 `/api/health/` 응답을 확인할 수 있습니다. Backend 연결 실패 또는 재시도 실패 시 SweetAlert2 alert가 표시됩니다.
+ 
+ ## 방향성
+ 
+-Next.js frontend는 case workspace, evidence timeline, report review, visual artifact viewer, reviewer/admin UI를 위한 제품형 화면으로 확장될 예정입니다. Django Admin은 내부 운영자/admin workflow 용도로 예약됩니다.
++Next.js frontend는 개인 AI 대화, 팀 Topic/Thread, 파일과 Artifact, AI 작업 상태, 공유 결과 화면과 Browser 작업 화면을 위한 사용자 UI로 확장합니다. Django/DRF는 사용자·권한·협업 컨텍스트·파일·지식·작업 상태를 관리하는 기본 backend/control plane으로 유지하고, Django Admin은 내부 운영자/admin workflow에 사용합니다.
++
++장시간 AI 실행과 Browser/Terminal/Workspace 실행은 web request 처리와 분리하는 방향을 우선합니다.
+diff --git a/docs/STATE-SCHEMA.md b/docs/STATE-SCHEMA.md
+index d0337b9..34eb2c8 100644
+--- a/docs/STATE-SCHEMA.md
++++ b/docs/STATE-SCHEMA.md
+@@ -1,164 +1,188 @@
+-# Vericus AI-Facing State and Evidence Shapes
++# SparkCrew AI-Facing State Shapes
+ 
+-This is not a database schema. This document describes AI-facing state, evidence, tool run, and runbook shapes for planning and review.
++This is not a database schema. This document describes conceptual AI-facing collaboration and runtime state for planning and review.
+ 
+-The shapes below are conceptual pseudo-schemas. They are intended to help agents reason consistently about case state, references, live evidence, tool execution, and runbook steps. They are not tables, ORM models, migrations, or implementation requirements.
++The shapes below are pseudo-schemas only. They are not tables, ORM models, migrations, API contracts, or implementation requirements.
+ 
+-## CaseState conceptual fields
++## CollaborationContext
+ 
+-`CaseState` represents the working state for a case as an agent plans, collects evidence, updates hypotheses, and drafts reports for human review.
++`CollaborationContext` represents the context available to a person or AI participant for a specific interaction.
+ 
+ Conceptual fields:
+ 
+-- `case_id`: stable identifier for the case.
+-- `user_request`: original user request or normalized summary.
+-- `domain`: classified domain such as GUI, API, CLI scanner, vulnerability, compliance, audit, or mixed.
+-- `target`: declared target system, page, endpoint, repository area, document, or asset.
+-- `constraints`: scope limits, safety rules, approvals, and stop conditions.
+-- `references`: reference materials used for planning and interpretation.
+-- `plan`: current plan or runbook-level outline.
+-- `current_step`: active step in the plan.
+-- `evidence`: collected live evidence for the case.
+-- `tool_results`: tool run summaries and artifact references.
+-- `hypotheses`: tentative explanations or findings that still need evidence or review.
+-- `missing_evidence`: known gaps that limit confidence or require additional collection.
+-- `risk_level`: current risk assessment label for triage, not final judgment.
+-- `requires_human_review`: whether the case, claim, or report needs explicit human review.
+-- `final_report`: report draft or final human-reviewed report reference.
++- `context_type`: personal_chat, personal_topic, or team_topic.
++- `context_id`: stable identifier for the context.
++- `thread_id`: active thread when the interaction is scoped below the Topic level.
++- `participants`: people and shared AI participants visible in this context.
++- `messages`: relevant conversation items.
++- `files`: files explicitly available to the context.
++- `knowledge_refs`: RAG/knowledge references available under the current permissions.
++- `active_tasks`: task references started from this context.
++- `artifacts`: persistent outputs associated with the context.
++- `constraints`: permissions, tool limits, approvals, and other execution constraints.
+ 
+ Conceptual pseudo-schema:
+ 
+ ```json
+ {
+-  "case_id": "case identifier",
+-  "user_request": "request summary",
+-  "domain": "classified domain",
+-  "target": "declared target",
+-  "constraints": ["scope and safety constraint"],
+-  "references": ["Reference"],
+-  "plan": ["RunbookStep"],
+-  "current_step": "step identifier",
+-  "evidence": ["Evidence"],
+-  "tool_results": ["ToolRun"],
+-  "hypotheses": ["tentative claim"],
+-  "missing_evidence": ["evidence gap"],
+-  "risk_level": "triage label",
+-  "requires_human_review": true,
+-  "final_report": "report reference or draft summary"
++  "context_type": "personal_chat | personal_topic | team_topic",
++  "context_id": "context identifier",
++  "thread_id": "optional thread identifier",
++  "participants": ["ParticipantRef"],
++  "messages": ["MessageRef"],
++  "files": ["FileRef"],
++  "knowledge_refs": ["KnowledgeReference"],
++  "active_tasks": ["AgentTaskRef"],
++  "artifacts": ["ArtifactRef"],
++  "constraints": ["permission or execution constraint"]
+ }
+ ```
+ 
+-## Reference shape
++## AgentTaskState
+ 
+-`Reference` represents context used to plan, compare, or interpret evidence. It is not itself live evidence unless separately collected as an artifact during a case.
++`AgentTaskState` represents a long-running or tool-using AI task that is separate from the conversational message that requested it.
+ 
+-Fields:
++Conceptual fields:
+ 
+-- `source_type`: document, standard, policy, repository file, external page, or other reference type.
+-- `source_name`: human-readable source name.
+-- `url`: source URL or repository path when applicable.
+-- `trust_level`: approved, internal, external, unverified, deprecated, or similar label.
+-- `fetched_at`: timestamp or date when the reference was retrieved or reviewed.
+-- `approval_status`: approved for use, pending review, rejected, or unknown.
+-- `summary`: concise summary relevant to the case.
++- `task_id`: stable identifier.
++- `context_ref`: personal or team context that owns the task.
++- `requested_by`: user or AI participant that initiated the task.
++- `status`: queued, running, waiting_for_approval, succeeded, failed, cancelled, or similar state.
++- `plan`: current high-level task plan when one exists.
++- `current_step`: current execution step.
++- `tool_runs`: tool execution summaries.
++- `outputs`: artifact/file/message references produced by the task.
++- `approval`: current approval requirement or result.
++- `error`: safe failure summary when applicable.
+ 
+ Conceptual pseudo-schema:
+ 
+ ```json
+ {
+-  "source_type": "reference type",
+-  "source_name": "source name",
+-  "url": "reference location",
+-  "trust_level": "trust label",
+-  "fetched_at": "retrieval timestamp",
+-  "approval_status": "approval label",
+-  "summary": "reference summary"
++  "task_id": "task identifier",
++  "context_ref": "context identifier",
++  "requested_by": "participant identifier",
++  "status": "task status",
++  "plan": ["task step"],
++  "current_step": "step identifier",
++  "tool_runs": ["ToolRun"],
++  "outputs": ["output reference"],
++  "approval": "approval state or null",
++  "error": "safe error summary or null"
+ }
+ ```
+ 
+-## Evidence shape
++## ToolRun
+ 
+-`Evidence` represents live case-specific output collected from approved tool execution or observation.
++`ToolRun` represents one traceable tool or runtime action.
+ 
+ Fields:
+ 
+-- `evidence_id`: stable identifier for the evidence item.
+-- `evidence_type`: screenshot, trace, log, API response summary, scanner finding, visual comparison, or similar type.
+-- `source_tool`: tool or subgraph that collected the evidence.
+-- `artifact_ref`: reference to the stored artifact or redacted artifact.
+-- `redaction_status`: unredacted transient, redacted, reviewed, or not applicable.
+-- `summary`: concise evidence summary.
+-- `collected_at`: timestamp or date when evidence was collected.
++- `tool_name`: Browser, Playwright, Terminal, Workspace, retrieval, model tool, API tool, or another approved tool.
++- `action_id`: stable action identifier.
++- `params_summary`: safe summary without secrets or credentials.
++- `started_at`: start timestamp.
++- `finished_at`: finish timestamp.
++- `status`: succeeded, failed, skipped, blocked, or waiting_for_approval.
++- `output_refs`: artifact, file, message, log, or other persistent result references.
+ 
+ Conceptual pseudo-schema:
+ 
+ ```json
+ {
+-  "evidence_id": "evidence identifier",
+-  "evidence_type": "evidence type",
+-  "source_tool": "tool name",
+-  "artifact_ref": "artifact reference",
+-  "redaction_status": "redaction label",
+-  "summary": "evidence summary",
+-  "collected_at": "collection timestamp"
++  "tool_name": "tool name",
++  "action_id": "action identifier",
++  "params_summary": "safe parameter summary",
++  "started_at": "start timestamp",
++  "finished_at": "finish timestamp",
++  "status": "tool status",
++  "output_refs": ["persistent output reference"]
+ }
+ ```
+ 
+-## ToolRun shape
++## KnowledgeReference
+ 
+-`ToolRun` represents an approved tool action and its traceable result.
++`KnowledgeReference` represents retrievable context and its scope. A shared file is not automatically a `KnowledgeReference`.
+ 
+ Fields:
+ 
+-- `tool_name`: approved tool name.
+-- `command_id` or `action_id`: stable identifier for the command or action.
+-- `params_summary`: safe summary of parameters without secrets or credentials.
+-- `started_at`: start timestamp.
+-- `finished_at`: finish timestamp.
+-- `status`: succeeded, failed, skipped, blocked by policy, or needs human approval.
+-- `raw_artifact_ref`: transient or protected raw artifact reference when permitted.
+-- `redacted_artifact_ref`: persistent redacted artifact reference when available.
++- `source_type`: uploaded_file, internal_document, external_page, database, or another source type.
++- `source_ref`: stable source identifier or location.
++- `scope`: personal, topic, team, organization, or external.
++- `owner_ref`: owner or managing context when applicable.
++- `indexed_at`: indexing timestamp when indexed.
++- `version_or_validity`: version, effective date, or validity information when applicable.
++- `summary`: concise retrieval summary.
+ 
+ Conceptual pseudo-schema:
+ 
+ ```json
+ {
+-  "tool_name": "approved tool name",
+-  "command_id": "command identifier",
+-  "action_id": "action identifier",
+-  "params_summary": "safe parameter summary",
+-  "started_at": "start timestamp",
+-  "finished_at": "finish timestamp",
+-  "status": "tool status",
+-  "raw_artifact_ref": "protected raw artifact reference",
+-  "redacted_artifact_ref": "redacted artifact reference"
++  "source_type": "source type",
++  "source_ref": "source reference",
++  "scope": "personal | topic | team | organization | external",
++  "owner_ref": "owner reference",
++  "indexed_at": "indexing timestamp or null",
++  "version_or_validity": "version or validity metadata",
++  "summary": "retrieval summary"
+ }
+ ```
+ 
+-## RunbookStep shape
++## Artifact
+ 
+-`RunbookStep` represents one bounded step in a plan.
++`Artifact` represents a persistent result created, uploaded, or derived during collaboration.
+ 
+ Fields:
+ 
+-- `step_id`: stable step identifier.
+-- `purpose`: why the step is needed.
+-- `allowed_tools`: tools permitted for this step.
+-- `preconditions`: conditions that must be true before execution.
+-- `expected_evidence`: evidence expected from the step.
+-- `stop_conditions`: conditions that require stopping or returning for review.
+-- `human_approval_required`: whether explicit human approval is required before execution.
++- `artifact_id`: stable identifier.
++- `artifact_type`: document, image, video, chart, table, html, notebook_result, file, browser_snapshot, or similar type.
++- `context_ref`: owning personal/team context.
++- `source_task_id`: task that produced the artifact when applicable.
++- `storage_ref`: persistent storage reference.
++- `visibility`: personal or shared visibility scope.
++- `created_at`: creation timestamp.
+ 
+ Conceptual pseudo-schema:
+ 
+ ```json
+ {
+-  "step_id": "step identifier",
+-  "purpose": "step purpose",
+-  "allowed_tools": ["approved tool"],
+-  "preconditions": ["required condition"],
+-  "expected_evidence": ["expected evidence item"],
+-  "stop_conditions": ["condition that stops execution"],
+-  "human_approval_required": true
++  "artifact_id": "artifact identifier",
++  "artifact_type": "artifact type",
++  "context_ref": "context identifier",
++  "source_task_id": "task identifier or null",
++  "storage_ref": "storage reference",
++  "visibility": "personal or shared scope",
++  "created_at": "creation timestamp"
+ }
+ ```
++
++## BrowserSession
++
++`BrowserSession` represents an interactive browser runtime attached to a task.
++
++Fields:
++
++- `session_id`: stable identifier.
++- `task_id`: owning task.
++- `status`: starting, ready, active, stopping, stopped, or failed.
++- `controller`: user, AI, or none when explicit control handoff is implemented.
++- `viewer_scope`: participants allowed to view the session.
++- `started_at`: start timestamp.
++- `ended_at`: end timestamp.
++
++Browser runtime state is ephemeral by default. Persistent outputs must be returned through files, artifacts, task state, or messages.
++
++## StageItem
++
++`StageItem` represents an item currently presented in the shared viewing surface.
++
++Fields:
++
++- `item_id`: stable identifier.
++- `context_ref`: owning Topic/Thread or personal context.
++- `source_type`: artifact or live_browser.
++- `source_ref`: artifact or browser session reference.
++- `presenter_ref`: current presenter when applicable.
++- `presentation_state`: page, slide, playback position, filter, or other synchronized presentation state.
++
++`StageItem` is presentation state, not the canonical storage location for the underlying file or artifact.
+diff --git a/docs/TESTING.md b/docs/TESTING.md
+index a8b6f6b..b90da69 100644
+--- a/docs/TESTING.md
++++ b/docs/TESTING.md
+@@ -1,6 +1,8 @@
+-# Vericus Testing Strategy
++# SparkCrew Testing Strategy
+ 
+-This document describes AI-facing testing strategy for document-only changes, GUI evidence, API evidence, CLI scanner evidence, report traceability, scaffold checks, and forbidden-change checks. It is a planning and review guide, not a test implementation file.
++This document describes the testing strategy for the current scaffold and for SparkCrew collaboration features as they are implemented. It is a planning and review guide, not a test implementation file.
++
++Do not claim a planned feature is verified when the corresponding code or runtime does not exist.
+ 
+ ## Initial scaffold checks
+ 
+@@ -30,75 +32,115 @@ For the current runnable scaffold, use these checks when the relevant area chang
+   npm run test:visual
+   ```
+ 
+-- Tailwind, axios, and SweetAlert2 usage checks:
+-
+-  ```bash
+-  cd frontend
+-  rg "tailwind|@tailwind|bg-|text-|grid|flex|rounded|shadow" src
+-  rg "axios|sweetalert2|Swal" src package.json
+-  ```
+-
+-Backend changes must at least run Django checks. API changes should be checked through Django/DRF endpoint tests or manual endpoint verification until a fuller test suite is added. UI/web design changes must include Playwright-based visual testing.
++Backend changes must at least run Django checks. UI/web design changes must include Playwright-based visual testing.
+ 
+ ## Document-only change verification
+ 
+ For documentation-only updates, verify:
+ 
+ - File existence for every expected document.
+-- Link check for newly added references.
+-- Stale reference search for removed or renamed documentation paths.
++- Link/path consistency for changed references.
++- Stale project-name and stale architecture wording in the changed documentation scope.
+ - No secrets, credentials, or realistic secret examples are present.
+ - The changed files are limited to the requested documentation scope.
++- Planned and implemented features remain clearly distinguished.
+ 
+-## GUI/browser evidence testing
++Useful checks include:
+ 
+-GUI and browser evidence testing should use Playwright when browser behavior, UI workflow, or visual evidence is in scope.
++```bash
++git diff --check
++rg -n "Vericus|evidence-driven workspace|case workspace|evidence timeline"   README.md AGENTS.md docs frontend/README.md backend/README.md skills/README.md   .github/copilot-instructions.md .cursor/rules/vericus.mdc
++```
+ 
+-Guidelines:
++The `.cursor/rules/vericus.mdc` path may retain its historical filename until a separate rename is explicitly requested; its contents should still describe SparkCrew.
+ 
+-- Use Playwright for approved GUI and browser evidence collection.
+-- UI or web design changes must include Playwright-based visual testing.
+-- Visual testing must be done in addition to DOM, accessibility, or CLI checks.
+-- If visual testing reveals layout or appearance issues, fix them before completing the task.
+-- Store screenshot and trace artifacts only after sensitive information is redacted or otherwise handled according to policy.
+-- Keep browser evidence tied to the case, plan step, and tool run that produced it.
++## Topic/Thread and context testing
+ 
+-## API testing
++When Topic/Thread features are implemented, verify:
++
++- Personal AI context is not visible in team contexts without explicit sharing.
++- Team AI receives only the Topic/Thread history, files, and knowledge permitted by the current access scope.
++- Topic/Thread navigation preserves the correct context.
++- Multiple topics do not leak messages, files, task state, or retrieval results into each other.
++- Rich AI responses remain usable without turning every background event into a chat message.
++
++## File, artifact, and RAG testing
++
++When file and RAG features are implemented, verify:
++
++- Upload, download, and preview permissions.
++- Personal versus team file visibility.
++- File upload does not automatically create team-wide or organization-wide knowledge.
++- Explicit knowledge-indexing actions preserve source and scope metadata.
++- Generated artifacts remain traceable to their source task/context.
++- Runtime-local temporary files do not become persistent shared files unless explicitly published.
+ 
+-API evidence testing should use Django/DRF endpoint tests or manual endpoint verification for the current backend scaffold. Postman/Newman may be used for approved API collections and controlled request flows when that workflow is explicitly in scope.
++## Background task testing
+ 
+-Guidelines:
++When AI task execution is implemented, verify:
+ 
+-- Verify the Django `GET /api/health/` endpoint when backend integration changes.
+-- Use Postman/Newman for approved API evidence collection when applicable.
+-- Do not send state-changing production requests unless explicitly approved.
+-- Redact request and response bodies before persistent storage when they may contain sensitive information.
+-- Keep API evidence traceable to the collection, request, response summary, and tool run.
++- A task can continue without blocking normal conversation.
++- Task status transitions are observable and consistent.
++- Cancellation and failure do not corrupt conversation or persistent files.
++- Task outputs return as explicit messages, files, artifacts, or task results.
++- State-changing or high-impact actions stop for approval when the workflow requires it.
++
++## Browser Computer Use testing
++
++Browser behavior and browser-based Computer Use should use Playwright for deterministic interaction and verification whenever possible.
++
++Verify:
++
++- Browser sessions start and stop cleanly.
++- The session is associated with the correct task/context.
++- Allowed viewers cannot access sessions from another context.
++- AI actions operate on the intended page and browser state.
++- User/AI control handoff is exclusive and visible when that feature is implemented.
++- Screenshots are generated and directly reviewed for UI changes.
++- Browser console errors and failed network/resource requests are checked when relevant.
++
++Full desktop/OS streaming and control are outside the current testing scope unless that project boundary is explicitly changed.
++
++## Shared result/view testing
++
++When document, media, chart/table, notebook/HTML, or live-browser presentation is implemented, verify:
++
++- The correct artifact or live session is shown.
++- Presentation state such as document page, slide, media position, or chart state stays consistent where synchronization is intended.
++- Closing the shared view does not delete the underlying artifact.
++- Desktop and mobile layouts remain usable without unintended horizontal scrolling or clipping.
++- Light and dark mode are verified when both modes are supported.
++
++## API testing
+ 
+-## CLI/scanner testing
++API changes should use Django/DRF tests and Postman/Newman verification when the API workflow is in scope.
+ 
+-CLI and scanner testing should use only approved and allowlisted commands.
++Check:
+ 
+-Guidelines:
++- Normal requests
++- Missing required values
++- Invalid input formats
++- Authentication and authorization errors
++- Missing resources
++- Boundary values
++- Expected HTTP status codes
++- Required response fields and types
++- Error response format
++- State changes and regression risk
+ 
+-- Use only allowlisted commands for scanner execution.
+-- Do not use root, sudo, or administrator privileges.
+-- Do not run destructive commands.
+-- Do not perform auto-fix actions without explicit approval.
+-- Do not store unredacted scanner output as a persistent artifact.
+-- Preserve redacted summaries and artifact references that are sufficient for human review.
++Do not send state-changing production requests unless explicitly approved. Do not place real secrets in Postman collections or environment examples.
+ 
+-## Report/evidence testing
++## Free-threading compatibility testing
+ 
+-Report and evidence testing should verify traceability and human review requirements.
++SparkCrew should be written so correctness does not rely on the GIL.
+ 
+-Check that:
++When a suitable free-threaded Python environment and dependency set are available:
+ 
+-- References and evidence are separated.
+-- Report claims are traceable to references, evidence, and tool runs.
+-- Tool runs identify the action, status, artifact references, and redaction status.
+-- Missing evidence and uncertainty are represented clearly.
+-- Human review flags are present for legal, security, compliance, audit, or high-impact conclusions.
++- Run the relevant backend test suite with the GIL disabled.
++- Run the same critical tests with a GIL-enabled runtime as a compatibility baseline.
++- Exercise concurrent access to shared application paths instead of assuming the GIL serializes them.
++- Verify native and third-party dependencies do not silently require incompatible thread-safety assumptions.
++- Record whether free-threaded execution was actually tested; do not infer support from static review alone.
+ 
+ ## Forbidden-change verification
+ 
+@@ -109,7 +151,8 @@ Verify that the change set does not include unapproved:
+ - SQL implementation.
+ - `.env` files.
+ - Secrets, credentials, or realistic secret examples.
+-- Vite, FastAPI, SQLAlchemy, Alembic, Prisma, Docker, Nginx, K8s, Helm, production deployment manifests, or CI workflow files.
+-- Test artifacts generated by tool execution.
++- FastAPI, SQLAlchemy, Alembic, Prisma, Docker, Nginx, K8s, Helm, production deployment manifests, or CI workflow files.
++- Package or lockfile changes.
++- Generated test artifacts.
+ 
+-FastAPI and SQLAlchemy are not part of the initial backend stack. FastAPI may be considered later only as a separate tool-runner or streaming service after explicit approval. Docker, Nginx, K8s, Helm, and deployment manifests are not part of the current scaffold.
++FastAPI and SQLAlchemy are not part of the current backend stack. A separate execution/streaming service may be considered later only after its responsibility is explicitly approved.
+diff --git a/docs/database-schema-guidelines.en.md b/docs/database-schema-guidelines.en.md
+index d7a152a..ed9dcf6 100644
+--- a/docs/database-schema-guidelines.en.md
++++ b/docs/database-schema-guidelines.en.md
+@@ -1,16 +1,18 @@
+ # Database Schema Guidelines
+ 
+-This document describes database schema design guidelines for Vericus. It does not create migrations, SQL, or ORM models.
++This document describes database schema design guidelines for SparkCrew. It does not create migrations, SQL, or ORM models.
+ 
+ ## Principles
+ 
+-- Keep references separate from evidence.
+-- Keep raw artifacts separate from compact summaries.
+-- Use `tool_runs` as the audit log for all tool executions.
+-- Treat evidence as append-only when possible.
+-- Make reports traceable to references, evidence, and tool runs.
+-- Do not store secrets, tokens, or passwords.
+-- For external documents, keep metadata such as `source`, `fetched_at`, `trust_level`, and `approval_status`.
++- Keep personal context and shared team context under separate access scopes.
++- Keep topics/threads, messages, files, artifacts, and AI tasks independently traceable.
++- Do not treat file sharing and RAG/knowledge indexing as the same state.
++- Give long-running AI work its own task/run state rather than embedding execution state only in messages.
++- Keep Browser/Terminal/Workspace runtime sessions separate from persistent collaboration data.
++- Make artifacts traceable to their source file or task and to the presentation state that references them.
++- Make `tool_runs` trace the tool, status, safe input summary, output references, and timestamps.
++- Do not store secrets, tokens, or passwords as normal application data.
++- For external or RAG documents, keep metadata such as `source`, `scope`, `owner`, `indexed_at`, and validity/version information when applicable.
+ - Assume timezone-aware timestamps.
+ - Apply future schema changes only through migrations.
+ 
+@@ -18,13 +20,15 @@ This document describes database schema design guidelines for Vericus. It does n
+ 
+ The initial candidate table names are listed below for design discussion only. This list is not a schema implementation.
+ 
+-- `cases`
+-- `case_plan_steps`
+-- `references`
+-- `evidence`
+-- `tool_runs`
++- `spaces`
++- `topics`
++- `thread_messages`
++- `files`
+ - `artifacts`
+-- `reports`
++- `agent_tasks`
++- `task_runs`
++- `tool_runs`
+ - `approvals`
++- `browser_sessions`
+ - `knowledge_documents`
+ - `knowledge_chunks`
+diff --git a/docs/database-schema-guidelines.ko.md b/docs/database-schema-guidelines.ko.md
+index 7b3ff2f..58a4bcf 100644
+--- a/docs/database-schema-guidelines.ko.md
++++ b/docs/database-schema-guidelines.ko.md
+@@ -1,16 +1,18 @@
+ # 데이터베이스 스키마 설계 지침
+ 
+-이 문서는 Vericus 데이터베이스 스키마의 설계 지침만 설명합니다. 실제 migration, SQL, ORM 모델은 이 문서 작업에서 만들지 않습니다.
++이 문서는 SparkCrew 데이터베이스 스키마의 설계 지침만 설명합니다. 실제 migration, SQL, ORM 모델은 이 문서 작업에서 만들지 않습니다.
+ 
+ ## 원칙
+ 
+-- References와 evidence를 분리합니다.
+-- Raw artifact와 compact summary를 분리합니다.
+-- `tool_runs`는 모든 도구 실행의 감사 로그 역할을 합니다.
+-- Evidence는 가능하면 append-only 성격으로 다룹니다.
+-- Reports는 references, evidence, tool_runs로 추적 가능해야 합니다.
+-- Secret, token, password는 저장하지 않습니다.
+-- 외부 문서에는 `source`, `fetched_at`, `trust_level`, `approval_status` 같은 메타데이터를 둡니다.
++- 개인 컨텍스트와 팀 공유 컨텍스트의 접근 범위를 분리합니다.
++- Topic/Thread, Message, File, Artifact, AI Task를 서로 독립적으로 추적할 수 있게 설계합니다.
++- 파일 공유와 RAG/지식 인덱싱 상태를 동일한 상태로 취급하지 않습니다.
++- 장시간 AI 작업은 메시지 자체가 아니라 별도 task/run 상태를 가집니다.
++- Browser/Terminal/Workspace 같은 실행 세션은 지속되는 협업 데이터와 분리합니다.
++- Artifact는 원본 파일, 생성 결과, 표시 상태와 출처 task를 추적할 수 있어야 합니다.
++- `tool_runs`는 실행 도구, 상태, 입력 요약, 결과 참조, 시간 정보를 추적할 수 있어야 합니다.
++- Secret, token, password는 일반 애플리케이션 데이터로 저장하지 않습니다.
++- 외부 또는 RAG 문서에는 `source`, `scope`, `owner`, `indexed_at`, 유효성/버전 관련 메타데이터를 둘 수 있습니다.
+ - Timestamp는 timezone-aware를 전제로 합니다.
+ - Schema 변경은 향후 migration으로만 수행합니다.
+ 
+@@ -18,13 +20,15 @@
+ 
+ 초기 후보 테이블 이름은 다음과 같습니다. 이 목록은 설계 방향을 문서화하기 위한 것이며, 실제 스키마 구현이 아닙니다.
+ 
+-- `cases`
+-- `case_plan_steps`
+-- `references`
+-- `evidence`
+-- `tool_runs`
++- `spaces`
++- `topics`
++- `thread_messages`
++- `files`
+ - `artifacts`
+-- `reports`
++- `agent_tasks`
++- `task_runs`
++- `tool_runs`
+ - `approvals`
++- `browser_sessions`
+ - `knowledge_documents`
+ - `knowledge_chunks`
+diff --git a/frontend/README.md b/frontend/README.md
+index 4c617d2..ea278b3 100644
+--- a/frontend/README.md
++++ b/frontend/README.md
+@@ -1,6 +1,8 @@
+-# Vericus Frontend
++# SparkCrew Frontend
+ 
+-Initial frontend scaffold for Vericus uses Next.js App Router, React, TypeScript, Tailwind CSS, axios, SweetAlert2, and Playwright.
++The initial SparkCrew frontend scaffold uses Next.js App Router, React, TypeScript, Tailwind CSS, axios, SweetAlert2, and Playwright.
++
++The project direction for the frontend includes personal AI conversations, team topics and threads, files/artifacts, AI task status, shared document/data/media views, and browser-based Computer Use surfaces. These features are not all implemented by the current scaffold.
+ 
+ ## Local development
+ 
+@@ -14,6 +16,6 @@ npm run dev -- --hostname 127.0.0.1 --port 3000
+ 
+ The frontend calls the Django backend through `/api`. During local development, `next.config.ts` rewrites `/api/*` to `http://127.0.0.1:8000/api/*`.
+ 
+-The home page displays the `GET /api/health/` response. axios performs the request, and SweetAlert2 is shown when a retry cannot reach the backend.
++The current home page displays the `GET /api/health/` response. axios performs the request, and SweetAlert2 is shown when a retry cannot reach the backend.
+ 
+ No Docker, Nginx, K8s, or Helm configuration is part of this initial scaffold.
+diff --git a/skills/README.md b/skills/README.md
+index 0ea237d..7801011 100644
+--- a/skills/README.md
++++ b/skills/README.md
+@@ -1,12 +1,16 @@
+-# Vericus Skills
++# SparkCrew Skills
+ 
+-This directory contains AI-facing skill documents for repeatable tasks, tools, and procedures. Do not create a `SKILL.md` file for every source folder. Create skill documents for reusable workflows such as GUI evidence collection, API evidence collection, vulnerability scanning, compliance RAG, visual judgment, and future DB migration procedures.
++This directory contains AI-facing skill documents for repeatable tasks, tools, and procedures. Skills are execution procedures, not the product's top-level information architecture. Create a `SKILL.md` only when a workflow is reusable and benefits from explicit inputs, constraints, tool steps, validation, and stop conditions.
+ 
+-## Skills
++Existing skill documents come from the repository's earlier experiments and may still be reused when their task is in scope. They do not define SparkCrew's core collaboration model.
+ 
+-- [`playwright-evidence`](playwright-evidence/SKILL.md): collect GUI and browser evidence.
+-- [`postman-api-evidence`](postman-api-evidence/SKILL.md): collect API evidence with Newman/Postman CLI.
+-- [`vulnerability-scan`](vulnerability-scan/SKILL.md): normalize CLI scanner output as evidence.
+-- [`compliance-rag`](compliance-rag/SKILL.md): separate internal RAG, external sources, and human review.
+-- [`visual-judge`](visual-judge/SKILL.md): use vision models only when structured evidence is not enough.
+-- [`db-migration`](db-migration/SKILL.md): define future DB migration procedure; do not change DB schema now.
++## Current skills
++
++- [`playwright-evidence`](playwright-evidence/SKILL.md): browser/UI execution and visual evidence workflow.
++- [`postman-api-evidence`](postman-api-evidence/SKILL.md): API request/response verification with Newman/Postman CLI.
++- [`vulnerability-scan`](vulnerability-scan/SKILL.md): specialized CLI scanner workflow.
++- [`compliance-rag`](compliance-rag/SKILL.md): specialized RAG/reference workflow with source separation and human review.
++- [`visual-judge`](visual-judge/SKILL.md): vision-assisted comparison when structured checks are not sufficient.
++- [`db-migration`](db-migration/SKILL.md): future DB migration procedure; do not change DB schema now.
++
++Future SparkCrew-specific skills may cover browser tasks, workspace/terminal tasks, knowledge retrieval, artifact generation, and other repeatable agent workflows when those features are implemented.
