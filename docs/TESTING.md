@@ -49,7 +49,10 @@ Useful checks include:
 
 ```bash
 git diff --check
-rg -n "Vericus|evidence-driven workspace|case workspace|evidence timeline"   README.md AGENTS.md docs frontend/README.md backend/README.md skills/README.md   .github/copilot-instructions.md .cursor/rules/vericus.mdc
+rg -n "Vericus|evidence-driven workspace|case workspace|evidence timeline" \
+  README.md AGENTS.md CLAUDE.md docs frontend/README.md backend/README.md skills/README.md \
+  .github/copilot-instructions.md .cursor/rules/vericus.mdc \
+  --glob '!TESTING.md'
 ```
 
 The `.cursor/rules/vericus.mdc` path may retain its historical filename until a separate rename is explicitly requested; its contents should still describe SparkCrew.
