@@ -1,12 +1,16 @@
-# Vericus Skills
+# SparkCrew Skills
 
-This directory contains AI-facing skill documents for repeatable tasks, tools, and procedures. Do not create a `SKILL.md` file for every source folder. Create skill documents for reusable workflows such as GUI evidence collection, API evidence collection, vulnerability scanning, compliance RAG, visual judgment, and future DB migration procedures.
+This directory contains AI-facing skill documents for repeatable tasks, tools, and procedures. Skills are execution procedures, not the product's top-level information architecture. Create a `SKILL.md` only when a workflow is reusable and benefits from explicit inputs, constraints, tool steps, validation, and stop conditions.
 
-## Skills
+Existing skill documents come from the repository's earlier experiments and may still be reused when their task is in scope. They do not define SparkCrew's core collaboration model.
 
-- [`playwright-evidence`](playwright-evidence/SKILL.md): collect GUI and browser evidence.
-- [`postman-api-evidence`](postman-api-evidence/SKILL.md): collect API evidence with Newman/Postman CLI.
-- [`vulnerability-scan`](vulnerability-scan/SKILL.md): normalize CLI scanner output as evidence.
-- [`compliance-rag`](compliance-rag/SKILL.md): separate internal RAG, external sources, and human review.
-- [`visual-judge`](visual-judge/SKILL.md): use vision models only when structured evidence is not enough.
-- [`db-migration`](db-migration/SKILL.md): define future DB migration procedure; do not change DB schema now.
+## Current skills
+
+- [`playwright-evidence`](playwright-evidence/SKILL.md): browser/UI execution and visual evidence workflow.
+- [`postman-api-evidence`](postman-api-evidence/SKILL.md): API request/response verification with Newman/Postman CLI.
+- [`vulnerability-scan`](vulnerability-scan/SKILL.md): specialized CLI scanner workflow.
+- [`compliance-rag`](compliance-rag/SKILL.md): specialized RAG/reference workflow with source separation and human review.
+- [`visual-judge`](visual-judge/SKILL.md): vision-assisted comparison when structured checks are not sufficient.
+- [`db-migration`](db-migration/SKILL.md): future DB migration procedure; do not change DB schema now.
+
+Future SparkCrew-specific skills may cover browser tasks, workspace/terminal tasks, knowledge retrieval, artifact generation, and other repeatable agent workflows when those features are implemented.

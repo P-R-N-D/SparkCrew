@@ -1,6 +1,8 @@
-# Vericus Backend
+# SparkCrew Backend
 
-Initial backend scaffold for Vericus uses Django, Django REST Framework, Django Admin, Django ORM, and django-cors-headers.
+The initial SparkCrew backend scaffold uses Django, Django REST Framework, Django Admin, Django ORM, and django-cors-headers.
+
+The backend direction is to keep Django as the primary control plane for users, permissions, topic/thread context, files, knowledge scope, task state, and admin workflows. Long-running AI work and Browser/Terminal/Workspace execution should run outside normal request handling. FastAPI or another runtime service may be considered later only when a separate execution/streaming service is justified.
 
 ## Local development
 

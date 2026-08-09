@@ -1,11 +1,13 @@
-# Vericus Copilot Instructions
+# SparkCrew Copilot Instructions
 
 Follow [`docs/CONTEXT.md`](../docs/CONTEXT.md) first. It is the canonical source of truth for AI-facing context and instructions.
 
 Guardrails:
 
-- Collect evidence; leave final judgment to humans.
-- Keep references separate from live evidence.
+- Preserve personal and shared team context boundaries.
+- Do not automatically promote uploaded files to shared or organization-wide RAG knowledge.
+- Keep conversation, background tasks, files/artifacts, and execution runtimes separate.
+- Do not rely on the GIL for application correctness.
 - Do not use root, sudo, or administrator privileges.
 - Do not run destructive commands.
 - Do not write or commit secrets, API keys, passwords, or tokens.
