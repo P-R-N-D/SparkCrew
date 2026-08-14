@@ -1,6 +1,6 @@
 # SparkCrew Backend
 
-SparkCrew uses Django 6 on Python 3.12+ with one Django project, `config`, and exactly two product apps: `core` and `agent`.
+SparkCrew uses Django 6 on Python 3.12–3.14 with one Django project, `config`, and exactly two product apps: `core` and `agent`.
 
 - `core` is the persistent product control plane and exposes Django REST Framework APIs under `/core/*`.
 - `agent` shares Django settings, ORM, migrations, auth, and Admin, while its FastAPI surface under `/agent/*` is reserved for AI/RAG/agent/runtime execution.
@@ -29,5 +29,17 @@ uvicorn config.asgi:application --host 127.0.0.1 --port 8000
 ```
 
 Endpoints: `GET /core/health/`, `GET /agent/health/`, `GET /agent/docs`, `GET /agent/openapi.json`, and `/admin/`.
+
+## Optional Django Admin setup
+
+The Next.js product Console at `/console/*` is separate from Django's internal ORM-backed Admin at `/admin/*`. For a new checkout, initialize Django's built-in tables and create a local administrator before signing in:
+
+```bash
+python backend/manage.py migrate
+python backend/manage.py createsuperuser
+python backend/manage.py runserver 127.0.0.1:8000
+```
+
+`backend/db.sqlite3` is a local development artifact and must not be committed. No custom domain migrations are included.
 
 Python Playwright is the async Browser Computer Use runtime foundation in `agent/runtime/browser`; installing its package does not install Chromium. Only Chromium is required at this stage. Django's SQLite development setting remains unchanged, and no custom migrations are included.

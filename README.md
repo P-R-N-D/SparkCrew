@@ -34,7 +34,7 @@ Full desktop/OS streaming and control are not part of the current project direct
 ## Current runnable scaffold
 
 - Frontend: Next.js user UI at `/`, a separate product Console at `/console/*`, React, TypeScript, Tailwind CSS, axios, SweetAlert2, and Node Playwright tests.
-- Backend: Django 6 on Python 3.12+, using one Django project (`config`) with two Django apps (`core`, `agent`).
+- Backend: Django 6 on Python 3.12–3.14, using one Django project (`config`) with two Django apps (`core`, `agent`).
 - URLs: core DRF at `/core/*`, Agent FastAPI at `/agent/*`, and Django Admin at `/admin/*`.
 - Composition: `config.asgi.application` mounts FastAPI and Django into one ASGI application, served identically by Daphne-backed `manage.py runserver` or Uvicorn.
 - Browser foundation: backend Python Playwright provides the async Agent Browser Computer Use package boundary; it is separate from frontend Playwright tests.
@@ -59,6 +59,18 @@ npm run dev -- --hostname 127.0.0.1 --port 3000
 ```
 
 Open `http://127.0.0.1:3000` for the user surface and `http://127.0.0.1:3000/console` for the product Console. Django Admin remains at `http://127.0.0.1:8000/admin/`.
+
+### Optional Django Admin setup
+
+The product Console at `/console/*` and Django's ORM-backed internal Admin at `/admin/*` are separate UIs. Initialize the built-in Django tables and create a local administrator before signing in to Django Admin:
+
+```bash
+python backend/manage.py migrate
+python backend/manage.py createsuperuser
+python backend/manage.py runserver 127.0.0.1:8000
+```
+
+`backend/db.sqlite3` is a local development artifact and must not be committed. The scaffold includes no custom domain migrations.
 
 ---
 

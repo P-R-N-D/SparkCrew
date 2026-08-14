@@ -4,7 +4,8 @@ test("user and console surfaces render with both backend services", async ({ pag
   await page.goto("/");
 
   await expect(page.getByRole("heading", { name: "SparkCrew" })).toBeVisible();
-  await expect(page.getByText("Connected", { exact: true })).toBeVisible();
+  await expect(page.getByRole("article", { name: "Core health" }).getByText("Connected", { exact: true })).toBeVisible();
+  await expect(page.getByRole("article", { name: "Agent health" }).getByText("Connected", { exact: true })).toBeVisible();
   await expect(page.getByText('"status": "ok"')).toBeVisible();
   await expect(page.getByText('"backend": "django"')).toBeVisible();
   await expect(page.getByText('"api": "drf"')).toBeVisible();

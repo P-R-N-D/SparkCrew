@@ -17,7 +17,7 @@ The primary collaboration direction is topic- and thread-based rather than chat-
 ## Current application scaffold
 
 - Frontend: Next.js user UI at `/`, product Console at `/console/*`, React, TypeScript, Tailwind CSS, axios, SweetAlert2, and Node Playwright tests.
-- Backend: one Django project (`config`) with Django apps `core` and `agent`.
+- Backend: Django 6 on Python 3.12–3.14, using one Django project (`config`) with Django apps `core` and `agent`.
 - `/core/*`: Django REST Framework control-plane APIs; `/agent/*`: Agent FastAPI; `/admin/*`: Django Admin.
 - `config.asgi.application` composes Django and FastAPI and is served by both Daphne-backed `manage.py runserver` and direct Uvicorn.
 - Python Playwright under `agent/runtime/browser` is the async Browser Computer Use foundation, separate from frontend Playwright testing.
@@ -70,7 +70,7 @@ Long-running AI work and Browser/Terminal/Workspace execution should be separate
 
 Agent orchestration is an implementation detail. LangGraph, DeepAgents, or another framework may be used when appropriate, but SparkCrew domain contracts should not depend on one orchestration framework.
 
-Do not add custom domain models, custom migrations, SQL, SQLAlchemy, Alembic, FastAPI, Docker, Nginx, K8s, Helm, or deployment manifests without explicit approval.
+FastAPI is approved only for the current `agent` execution surface. General product and control-plane APIs remain in `core` with Django REST Framework. Do not expand FastAPI into `core`, create another FastAPI project/service, or introduce another backend framework without explicit approval. Do not add custom domain models, custom migrations, SQL, SQLAlchemy, Alembic, Docker, Nginx, K8s, Helm, or deployment manifests without explicit approval.
 
 ## RAG and knowledge direction
 
