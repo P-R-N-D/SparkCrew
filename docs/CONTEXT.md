@@ -30,7 +30,6 @@ Only health APIs and architecture boundaries are currently implemented. Collabor
 - [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) describes the project architecture direction and current scaffold boundaries.
 - [`docs/STATE-SCHEMA.md`](STATE-SCHEMA.md) describes conceptual collaboration and runtime state shapes. It is not a database schema.
 - [`docs/TESTING.md`](TESTING.md) describes testing strategy and current scaffold checks.
-- `skills/*/SKILL.md` files define reusable task- or tool-level execution procedures and do not define the top-level product model.
 - Human-facing explanation documents should be split by language when both Korean and English versions are maintained.
 
 ## Core collaboration rules
