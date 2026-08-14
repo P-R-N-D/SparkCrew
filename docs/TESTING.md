@@ -1,159 +1,126 @@
 # SparkCrew Testing Strategy
 
-This document describes the testing strategy for the current scaffold and for SparkCrew collaboration features as they are implemented. It is a planning and review guide, not a test implementation file.
+This document separates checks for the current runnable scaffold from future feature-level verification. Do not claim planned behavior or platform support is tested when the corresponding implementation or runtime is absent.
 
-Do not claim a planned feature is verified when the corresponding code or runtime does not exist.
+## Current scaffold checks
 
-## Initial scaffold checks
-
-For the current runnable scaffold, use these checks when the relevant area changes:
-
-- Backend dependency and Django check:
-
-  ```bash
-  python -m pip install -r backend/requirements.txt
-  python backend/manage.py check
-  ```
-
-- Backend health endpoint verification:
-
-  ```bash
-  python backend/manage.py runserver 127.0.0.1:8000
-  curl http://127.0.0.1:8000/api/health/
-  ```
-
-- Frontend dependency, build, and visual smoke testing:
-
-  ```bash
-  cd frontend
-  npm install
-  npm run build
-  npx playwright install chromium
-  npm run test:visual
-  ```
-
-Backend changes must at least run Django checks. UI/web design changes must include Playwright-based visual testing.
-
-## Document-only change verification
-
-For documentation-only updates, verify:
-
-- File existence for every expected document.
-- Link/path consistency for changed references.
-- Stale project-name and stale architecture wording in the changed documentation scope.
-- No secrets, credentials, or realistic secret examples are present.
-- The changed files are limited to the requested documentation scope.
-- Planned and implemented features remain clearly distinguished.
-
-Useful checks include:
+The backend baseline is Django 6 on Python 3.12–3.14. Confirm resolved dependency versions when the baseline changes.
 
 ```bash
-git diff --check
-rg -n "Vericus|evidence-driven workspace|case workspace|evidence timeline" \
-  README.md AGENTS.md CLAUDE.md docs frontend/README.md backend/README.md skills/README.md \
-  .github/copilot-instructions.md .cursor/rules/sparkcrew.mdc \
-  --glob '!TESTING.md'
+python -m pip install -r backend/requirements.txt
+python backend/manage.py check
+
+cd backend
+python manage.py test core agent
+python manage.py makemigrations --check --dry-run
 ```
+
+The ASGI integration tests must exercise `config.asgi.application`, including `/core/health/`, `/agent/health/`, `/agent/openapi.json`, and the removed `/api/health/` route.
+
+Verify both server entrypoints independently:
+
+```bash
+cd backend
+python manage.py runserver 127.0.0.1:8000 --noreload
+uvicorn config.asgi:application --host 127.0.0.1 --port 8000
+```
+
+For each server, verify `/core/health/`, `/agent/health/`, `/agent/docs`, `/agent/openapi.json`, and `/admin/`; `/api/health/` must remain absent.
+
+Python Playwright package installation and the Chromium binary lifecycle are separate:
+
+```bash
+playwright install chromium
+```
+
+Frontend checks remain:
+
+```bash
+cd frontend
+npm run lint
+npm run build
+npm run test:visual
+```
+
+Frontend Playwright should verify `/` and `/console`, independent Core/Agent health status, console errors, failed network/resource requests, responsive overflow, and light/dark rendering. Environment-limited browser failures must be reported rather than treated as success.
 
 ## Topic/Thread and context testing
 
-When Topic/Thread features are implemented, verify:
+When collaboration features are implemented, verify:
 
-- Personal AI context is not visible in team contexts without explicit sharing.
-- Team AI receives only the Topic/Thread history, files, and knowledge permitted by the current access scope.
-- Topic/Thread navigation preserves the correct context.
-- Multiple topics do not leak messages, files, task state, or retrieval results into each other.
-- Rich AI responses remain usable without turning every background event into a chat message.
+- Personal AI context is not exposed automatically to a team context.
+- Team AI receives only the permitted Topic/Thread history, Files, and Knowledge.
+- Navigation preserves the intended context.
+- Topics do not leak Messages, Files, Task state, or retrieval results into each other.
 
-## File, artifact, and RAG testing
+## File, Artifact, and RAG testing
 
-When file and RAG features are implemented, verify:
+When these features are implemented, verify:
 
 - Upload, download, and preview permissions.
-- Personal versus team file visibility.
-- File upload does not automatically create team-wide or organization-wide knowledge.
-- Explicit knowledge-indexing actions preserve source and scope metadata.
-- Generated artifacts remain traceable to their source task/context.
-- Runtime-local temporary files do not become persistent shared files unless explicitly published.
+- Personal versus team visibility.
+- File upload does not automatically create team/organization Knowledge.
+- Explicit indexing preserves source and scope metadata.
+- Artifact provenance remains traceable to the source Task/context.
+- Runtime-local temporary Files do not become persistent automatically.
 
-## Background task testing
+## Background Task testing
 
-When AI task execution is implemented, verify:
+When background execution is implemented, verify:
 
-- A task can continue without blocking normal conversation.
-- Task status transitions are observable and consistent.
-- Cancellation and failure do not corrupt conversation or persistent files.
-- Task outputs return as explicit messages, files, artifacts, or task results.
-- State-changing or high-impact actions stop for approval when the workflow requires it.
+- Long-running work does not block the requesting conversation.
+- Product Task state transitions are observable and consistent.
+- Each agent execution attempt remains distinct from its product Task.
+- Cancellation and failure do not corrupt conversation or persistent Files.
+- Persistent output returns explicitly as a Message, File, Artifact, or Task result.
+- Approval-required actions stop for the required human decision.
 
 ## Browser Computer Use testing
 
-Browser behavior and browser-based Computer Use should use Playwright for deterministic interaction and verification whenever possible.
+The current repository contains only the async Python Playwright package boundary, not Browser Computer Use product behavior. When implemented, verify:
 
-Verify:
+- Session start and stop cleanup.
+- Task/context association.
+- Prevention of cross-context session access.
+- Actions operate on the intended page and browser state.
+- User/AI control handoff is exclusive and visible.
+- Screenshots are generated and reviewed.
+- Browser console errors and failed network/resource requests are checked.
 
-- Browser sessions start and stop cleanly.
-- The session is associated with the correct task/context.
-- Allowed viewers cannot access sessions from another context.
-- AI actions operate on the intended page and browser state.
-- User/AI control handoff is exclusive and visible when that feature is implemented.
-- Screenshots are generated and directly reviewed for UI changes.
-- Browser console errors and failed network/resource requests are checked when relevant.
+## Shared result and view testing
 
-Full desktop/OS streaming and control are outside the current testing scope unless that project boundary is explicitly changed.
+When shared presentation is implemented, verify:
 
-## Shared result/view testing
-
-When document, media, chart/table, notebook/HTML, or live-browser presentation is implemented, verify:
-
-- The correct artifact or live session is shown.
-- Presentation state such as document page, slide, media position, or chart state stays consistent where synchronization is intended.
-- Closing the shared view does not delete the underlying artifact.
-- Desktop and mobile layouts remain usable without unintended horizontal scrolling or clipping.
-- Light and dark mode are verified when both modes are supported.
+- The correct Artifact or live session is displayed.
+- Intended presentation state remains consistent.
+- Closing a shared view does not delete the underlying Artifact.
+- Responsive layouts avoid unintended overflow and clipping.
+- Supported light and dark modes remain usable.
 
 ## API testing
 
-API changes should use Django/DRF tests and Postman/Newman verification when the API workflow is in scope.
-
-Check:
+For future API changes, cover:
 
 - Normal requests
-- Missing required values
-- Invalid input formats
-- Authentication and authorization errors
-- Missing resources
-- Boundary values
-- Expected HTTP status codes
-- Required response fields and types
-- Error response format
-- State changes and regression risk
+- Missing required input and invalid formats
+- Authentication and authorization failures
+- Missing resources and boundary values
+- Expected status codes and response schemas
+- Stable error formats
+- Intended state changes and regression risk
 
-Do not send state-changing production requests unless explicitly approved. Do not place real secrets in Postman collections or environment examples.
+Do not issue state-changing requests against production without explicit approval or place real secrets in test assets.
 
 ## Free-threading compatibility testing
 
-SparkCrew should be written so correctness does not rely on the GIL.
+When a suitable environment and dependency set are available:
 
-When a suitable free-threaded Python environment and dependency set are available:
+- Run relevant tests with the GIL disabled.
+- Run a GIL-enabled compatibility baseline.
+- Exercise concurrent access rather than assuming serialization.
+- Verify native and third-party dependency compatibility.
+- Record what was actually tested; do not infer support from static review.
 
-- Run the relevant backend test suite with the GIL disabled.
-- Run the same critical tests with a GIL-enabled runtime as a compatibility baseline.
-- Exercise concurrent access to shared application paths instead of assuming the GIL serializes them.
-- Verify native and third-party dependencies do not silently require incompatible thread-safety assumptions.
-- Record whether free-threaded execution was actually tested; do not infer support from static review alone.
+## Change-scope checks
 
-## Forbidden-change verification
-
-Verify that the change set does not include unapproved:
-
-- DB migration files or migration instructions.
-- ORM/schema implementation or custom Django models.
-- SQL implementation.
-- `.env` files.
-- Secrets, credentials, or realistic secret examples.
-- FastAPI, SQLAlchemy, Alembic, Prisma, Docker, Nginx, K8s, Helm, production deployment manifests, or CI workflow files.
-- Package or lockfile changes.
-- Generated test artifacts.
-
-FastAPI and SQLAlchemy are not part of the current backend stack. A separate execution/streaming service may be considered later only after its responsibility is explicitly approved.
+For documentation or scaffold work, also verify changed links and paths, stale naming, `git diff --check`, absence of secrets/generated artifacts, and that planned features remain clearly distinguished from implemented behavior. Do not introduce domain models, custom migrations, infrastructure, or unrelated frameworks as incidental test work.

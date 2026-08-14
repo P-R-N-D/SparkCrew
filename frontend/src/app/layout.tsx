@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Vericus",
-  description: "Evidence-driven workspace scaffold",
+  title: "SparkCrew",
+  description: "People and AI working in shared context",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

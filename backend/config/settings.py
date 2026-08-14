@@ -1,4 +1,4 @@
-"""Development settings for the initial Vericus Django scaffold."""
+"""Development settings for the SparkCrew Django project."""
 
 from pathlib import Path
 import os
@@ -15,6 +15,7 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -23,6 +24,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "core",
+    "agent",
 ]
 
 MIDDLEWARE = [
@@ -54,6 +57,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
+ASGI_APPLICATION = "config.asgi.application"
 
 DATABASES = {
     "default": {
