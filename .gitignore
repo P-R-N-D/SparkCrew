@@ -111,7 +111,7 @@ supabase/.env.*
 supabase/config.local.*
 supabase/*.local.toml
 
-# Vericus local-only unredacted runtime state
-.vericus-local/
+# SparkCrew local-only unredacted runtime state
+.sparkcrew-local/
 .evidence-local/
 local-artifacts/

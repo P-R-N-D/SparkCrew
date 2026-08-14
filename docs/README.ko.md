@@ -21,9 +21,9 @@ SparkCrew는 단체 채팅 하나에 모든 정보를 쌓는 구조보다 Topic�
 현재 저장소에 실제로 포함된 초기 scaffold는 다음과 같습니다.
 
 - Frontend: Next.js, React, TypeScript, Tailwind CSS, axios, SweetAlert2, Playwright.
-- Backend: Django, Django REST Framework, Django Admin, Django ORM, django-cors-headers.
-- Local 연동: Next.js 개발 서버가 `/api/*` 요청을 Django backend `http://127.0.0.1:8000/api/*`로 rewrite합니다.
-- Health endpoint: `GET /api/health/`.
+- Backend: 하나의 Django project(`config`)와 `core`(DRF), `agent`(Django app + FastAPI), Django Admin, Django ORM, django-cors-headers.
+- Local 연동: Next.js 개발 서버가 `/core/*`와 `/agent/*` 요청을 `http://127.0.0.1:8000` backend로 rewrite합니다.
+- Health endpoint: `GET /core/health/`, `GET /agent/health/`.
 - Django Admin: `/admin/`.
 
 위의 협업, RAG, AI 작업, Browser/Terminal/Workspace, 공유 결과 화면은 프로젝트 방향이며 현재 scaffold에 모두 구현되어 있다는 의미가 아닙니다.
@@ -35,6 +35,7 @@ SparkCrew는 단체 채팅 하나에 모든 정보를 쌓는 구조보다 Topic�
 ```bash
 # Backend
 python -m pip install -r backend/requirements.txt
+playwright install chromium
 python backend/manage.py check
 python backend/manage.py runserver 127.0.0.1:8000
 
@@ -46,7 +47,7 @@ npm run test:visual
 npm run dev -- --hostname 127.0.0.1 --port 3000
 ```
 
-브라우저에서 `http://127.0.0.1:3000`을 열면 현재 frontend scaffold와 `/api/health/` 응답을 확인할 수 있습니다. Backend 연결 실패 또는 재시도 실패 시 SweetAlert2 alert가 표시됩니다.
+브라우저에서 `http://127.0.0.1:3000`을 열면 현재 frontend scaffold와 `/core/health/`, `/agent/health/` 응답을 확인할 수 있습니다. Backend 연결 실패 또는 재시도 실패 시 SweetAlert2 alert가 표시됩니다.
 
 ## 방향성
 

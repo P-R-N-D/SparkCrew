@@ -21,9 +21,9 @@ Full desktop/OS streaming and control are outside the current project scope. Bro
 The repository currently contains this initial scaffold:
 
 - Frontend: Next.js, React, TypeScript, Tailwind CSS, axios, SweetAlert2, Playwright.
-- Backend: Django, Django REST Framework, Django Admin, Django ORM, django-cors-headers.
-- Local integration: the Next.js dev server rewrites `/api/*` to the Django backend at `http://127.0.0.1:8000/api/*`.
-- Health endpoint: `GET /api/health/`.
+- Backend: one Django project (`config`) with `core` (DRF) and `agent` (Django app + FastAPI), plus Django Admin, Django ORM, and django-cors-headers.
+- Local integration: the Next.js dev server rewrites `/core/*` and `/agent/*` to the backend at `http://127.0.0.1:8000`.
+- Health endpoints: `GET /core/health/` and `GET /agent/health/`.
 - Django Admin: `/admin/`.
 
 The collaboration, RAG, agent-task, browser/terminal/workspace, and shared-result concepts above describe project direction and are not all implemented by the current scaffold.
@@ -35,6 +35,7 @@ This initial scaffold does not include Docker, Nginx, K8s, Helm, production depl
 ```bash
 # Backend
 python -m pip install -r backend/requirements.txt
+playwright install chromium
 python backend/manage.py check
 python backend/manage.py runserver 127.0.0.1:8000
 
@@ -46,7 +47,7 @@ npm run test:visual
 npm run dev -- --hostname 127.0.0.1 --port 3000
 ```
 
-Open `http://127.0.0.1:3000` to view the current frontend scaffold and `/api/health/` response. SweetAlert2 alerts are used when backend health checks fail.
+Open `http://127.0.0.1:3000` to view the current frontend scaffold and the `/core/health/` and `/agent/health/` responses. SweetAlert2 alerts are used when backend health checks fail.
 
 ## Direction
 

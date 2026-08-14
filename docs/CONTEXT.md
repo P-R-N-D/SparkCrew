@@ -16,17 +16,13 @@ The primary collaboration direction is topic- and thread-based rather than chat-
 
 ## Current application scaffold
 
-The current runnable application scaffold uses these primary stacks:
+- Frontend: Next.js user UI at `/`, product Console at `/console/*`, React, TypeScript, Tailwind CSS, axios, SweetAlert2, and Node Playwright tests.
+- Backend: one Django project (`config`) with Django apps `core` and `agent`.
+- `/core/*`: Django REST Framework control-plane APIs; `/agent/*`: Agent FastAPI; `/admin/*`: Django Admin.
+- `config.asgi.application` composes Django and FastAPI and is served by both Daphne-backed `manage.py runserver` and direct Uvicorn.
+- Python Playwright under `agent/runtime/browser` is the async Browser Computer Use foundation, separate from frontend Playwright testing.
 
-- Frontend: Next.js, React, TypeScript, Tailwind CSS, axios, SweetAlert2, and Playwright.
-- Backend: Django, Django REST Framework, Django Admin, Django ORM, and django-cors-headers.
-- Local integration: the frontend calls Django through `/api` during local development using Next.js rewrites from `/api/*` to `http://127.0.0.1:8000/api/*`.
-- Health endpoint: Django exposes `GET /api/health/` for frontend/backend integration checks.
-- Admin: Django Admin is enabled at `/admin/` and reserved for internal operator/admin workflows.
-
-The collaboration, RAG, background-task, Browser/Terminal/Workspace, and shared-result features described in this document are architectural direction unless the current code and tests demonstrate that they are implemented.
-
-FastAPI and SQLAlchemy are not part of the current backend stack. FastAPI may be considered later only as a separate execution or streaming service after explicit approval. Docker, Nginx, K8s, Helm, and deployment manifests are not part of the current scaffold.
+Only health APIs and architecture boundaries are currently implemented. Collaboration models, RAG, LLM orchestration, background execution, and browser sessions remain future work.
 
 ## Document roles
 

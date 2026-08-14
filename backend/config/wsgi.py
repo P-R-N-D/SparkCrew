@@ -1,4 +1,4 @@
-"""WSGI config for Vericus."""
+"""Django-only WSGI fallback for SparkCrew."""
 
 import os
 from django.core.wsgi import get_wsgi_application
