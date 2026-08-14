@@ -17,7 +17,7 @@ The primary collaboration direction is topic- and thread-based rather than chat-
 ## Current application scaffold
 
 - Frontend: Next.js user UI at `/`, product Console at `/console/*`, React, TypeScript, Tailwind CSS, axios, SweetAlert2, and Node Playwright tests.
-- Backend: Django 6 on Python 3.12–3.14, using one Django project (`config`) with Django apps `core` and `agent`.
+- Backend: Django 6 on Python 3.12, or newer, using one Django project (`config`) with Django apps `core` and `agent`.
 - `/core/*`: Django REST Framework control-plane APIs; `/agent/*`: Agent FastAPI; `/admin/*`: Django Admin.
 - `config.asgi.application` composes Django and FastAPI and is served by both Daphne-backed `manage.py runserver` and direct Uvicorn.
 - Python Playwright under `agent/runtime/browser` is the async Browser Computer Use foundation, separate from frontend Playwright testing.
